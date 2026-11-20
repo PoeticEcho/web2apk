@@ -1,0 +1,29 @@
+{
+  "name": "web2apk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "URL 하나로 안드로이드 APK 를 만드는 GitHub Actions + Capacitor 8 빌더",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "prepare:web": "node scripts/generate-project.mjs prepare",
+    "patch:android": "node scripts/generate-project.mjs patch",
+    "apk": "node scripts/generate-project.mjs all",
+    "assets": "capacitor-assets generate --android",
+    "test": "node tests/run-generator-tests.mjs",
+    "test:ui": "python3 tests/ui_test.py",
+    "test:workflow": "python3 tests/validate_workflow.py",
+    "test:all": "npm test && python3 tests/validate_workflow.py && python3 tests/ui_test.py"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.2"
+  }
+}

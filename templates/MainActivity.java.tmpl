@@ -1,0 +1,217 @@
+package __PACKAGE_NAME__;
+
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.Window;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.getcapacitor.Bridge;
+import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.BridgeWebViewClient;
+
+/**
+ * web2apk 가 자동 생성한 액티비티 (직접 고쳐도 다음 빌드에서 덮어써집니다).
+ *
+ * 앱 이름  : __APP_NAME_COMMENT__
+ * 대상 URL : __URL_COMMENT__
+ * 옵션     : 전체화면=__FULLSCREEN_LABEL__, 방향=__ORIENTATION__, 핀치줌=__ZOOM_LABEL__,
+ *            뒤로가기=__BACK_LABEL__, 외부링크=__EXTERNAL_LABEL__, 당겨서새로고침=__REFRESH_LABEL__
+ */
+public class MainActivity extends BridgeActivity {
+
+    private static final boolean FULLSCREEN = __FULLSCREEN__;
+    private static final boolean ALLOW_ZOOM = __ALLOW_ZOOM__;
+    private static final boolean PULL_TO_REFRESH = __PULL_TO_REFRESH__;
+    private static final boolean BACK_HISTORY_FIRST = __BACK_HISTORY_FIRST__;
+    private static final String STATUS_BAR_COLOR = "__STATUS_BAR_COLOR__";
+    private static final String NAVIGATION_BAR_COLOR = "__NAVIGATION_BAR_COLOR__";
+
+    private SwipeRefreshLayout refreshLayout;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        applyWindowOptions();
+        applyWebViewOptions();
+        installBackHandler();
+        installPullToRefresh();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // 전체화면 모드에서 알림창을 내리는 등으로 시스템 바가 다시 나타나면 되감춘다.
+        if (hasFocus && FULLSCREEN) {
+            hideSystemBars();
+        }
+    }
+
+    /**
+     * 상태바/내비바 색과 인셋(노치·상태바 높이) 처리.
+     * windowBackground 를 상태바 색으로 칠해 두고, 내용 영역에 인셋만큼 패딩을 준다.
+     * (Android 15+ 는 edge-to-edge 가 강제되어 setStatusBarColor 가 무시되므로,
+     *  배경색으로도 같은 인상을 유지하도록 두 가지를 함께 쓴다.)
+     */
+    @SuppressWarnings("deprecation")
+    private void applyWindowOptions() {
+        final Window window = getWindow();
+        final int statusBarColor = parseColor(STATUS_BAR_COLOR, Color.BLACK);
+        final int navigationBarColor = parseColor(NAVIGATION_BAR_COLOR, statusBarColor);
+
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.setStatusBarColor(statusBarColor);
+        window.setNavigationBarColor(navigationBarColor);
+
+        final WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+        if (controller != null) {
+            controller.setAppearanceLightStatusBars(isLightColor(statusBarColor));
+            controller.setAppearanceLightNavigationBars(isLightColor(navigationBarColor));
+        }
+
+        if (FULLSCREEN) {
+            hideSystemBars();
+            return;
+        }
+
+        final View content = findViewById(android.R.id.content);
+        if (content != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(content, (view, windowInsets) -> {
+                final Insets bars = windowInsets.getInsets(
+                        WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return windowInsets;
+            });
+            ViewCompat.requestApplyInsets(content);
+        }
+    }
+
+    private void hideSystemBars() {
+        final Window window = getWindow();
+        final WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+        if (controller == null) {
+            return;
+        }
+        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+    }
+
+    /** 핀치 줌 옵션. */
+    private void applyWebViewOptions() {
+        final WebView webView = currentWebView();
+        if (webView == null) {
+            return;
+        }
+        final WebSettings settings = webView.getSettings();
+        settings.setSupportZoom(ALLOW_ZOOM);
+        settings.setBuiltInZoomControls(ALLOW_ZOOM);
+        settings.setDisplayZoomControls(false);
+        if (ALLOW_ZOOM) {
+            settings.setUseWideViewPort(true);
+            settings.setLoadWithOverviewMode(true);
+        }
+    }
+
+    /** 하드웨어 뒤로가기: 웹 히스토리를 먼저 따라가고, 더 갈 곳이 없으면 앱을 닫는다. */
+    private void installBackHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                final WebView webView = currentWebView();
+                if (BACK_HISTORY_FIRST && webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                    return;
+                }
+                finish();
+            }
+        });
+    }
+
+    /**
+     * 당겨서 새로고침: Capacitor 의 WebView 를 SwipeRefreshLayout 으로 감싼다.
+     * 옵션이 꺼져 있으면 아무 것도 하지 않는다.
+     */
+    private void installPullToRefresh() {
+        if (!PULL_TO_REFRESH) {
+            return;
+        }
+        final WebView webView = currentWebView();
+        if (webView == null) {
+            return;
+        }
+        final ViewParent parent = webView.getParent();
+        if (!(parent instanceof ViewGroup) || parent instanceof SwipeRefreshLayout) {
+            return;
+        }
+        final ViewGroup container = (ViewGroup) parent;
+        final int index = container.indexOfChild(webView);
+        final ViewGroup.LayoutParams layoutParams = webView.getLayoutParams();
+
+        refreshLayout = new SwipeRefreshLayout(this);
+        refreshLayout.setLayoutParams(layoutParams);
+        refreshLayout.setColorSchemeColors(parseColor(STATUS_BAR_COLOR, Color.BLACK));
+        refreshLayout.setOnRefreshListener(() -> webView.reload());
+
+        container.removeView(webView);
+        refreshLayout.addView(webView, new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        container.addView(refreshLayout, index);
+
+        final Bridge bridge = getBridge();
+        if (bridge != null) {
+            // 페이지 로딩이 끝나면 새로고침 인디케이터를 내린다.
+            bridge.setWebViewClient(new BridgeWebViewClient(bridge) {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    super.onPageFinished(view, url);
+                    stopRefreshing();
+                }
+
+                @Override
+                public void onReceivedError(@NonNull WebView view, @NonNull WebResourceRequest request,
+                                            @NonNull WebResourceError error) {
+                    super.onReceivedError(view, request, error);
+                    stopRefreshing();
+                }
+            });
+        }
+    }
+
+    private void stopRefreshing() {
+        if (refreshLayout != null) {
+            refreshLayout.setRefreshing(false);
+        }
+    }
+
+    private WebView currentWebView() {
+        final Bridge bridge = getBridge();
+        return bridge != null ? bridge.getWebView() : null;
+    }
+
+    private static int parseColor(String hex, int fallback) {
+        try {
+            return Color.parseColor(hex);
+        } catch (IllegalArgumentException ignored) {
+            return fallback;
+        }
+    }
+
+    private static boolean isLightColor(int color) {
+        final double luminance = (0.2126 * Color.red(color) + 0.7152 * Color.green(color) + 0.0722 * Color.blue(color)) / 255.0;
+        return luminance > 0.6;
+    }
+}

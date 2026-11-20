@@ -1,0 +1,1443 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>web2apk — URL 하나로 안드로이드 APK</title>
+<meta name="description" content="웹페이지 주소만 넣으면 GitHub Actions + Capacitor 8 로 안드로이드 APK 를 만들어 주는 도구" />
+<meta name="color-scheme" content="dark light" />
+<style>
+  /* ---------------------------------------------------------------- tokens */
+  :root {
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", "Apple SD Gothic Neo", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --accent: #6366f1;
+    --accent-strong: #4f46e5;
+    --ok: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+  }
+  html[data-theme="dark"] {
+    --bg: #0b1020;
+    --bg-glow: radial-gradient(1200px 600px at 15% -10%, rgba(99, 102, 241, .28), transparent 60%),
+               radial-gradient(900px 500px at 100% 0%, rgba(14, 165, 233, .18), transparent 55%);
+    --surface: rgba(19, 26, 48, .82);
+    --surface-solid: #131a30;
+    --surface-2: rgba(255, 255, 255, .04);
+    --border: rgba(148, 163, 184, .18);
+    --border-strong: rgba(148, 163, 184, .32);
+    --text: #e8edf9;
+    --text-dim: #9aa7c2;
+    --text-faint: #6b7899;
+    --input-bg: rgba(8, 12, 24, .55);
+    --shadow: 0 24px 60px rgba(3, 7, 18, .55);
+  }
+  html[data-theme="light"] {
+    --bg: #f4f6fb;
+    --bg-glow: radial-gradient(1100px 560px at 10% -10%, rgba(99, 102, 241, .16), transparent 60%),
+               radial-gradient(800px 460px at 100% 0%, rgba(14, 165, 233, .12), transparent 55%);
+    --surface: rgba(255, 255, 255, .88);
+    --surface-solid: #ffffff;
+    --surface-2: rgba(15, 23, 42, .03);
+    --border: rgba(15, 23, 42, .10);
+    --border-strong: rgba(15, 23, 42, .18);
+    --text: #101828;
+    --text-dim: #51607a;
+    --text-faint: #8592ab;
+    --input-bg: #ffffff;
+    --shadow: 0 20px 50px rgba(15, 23, 42, .10);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-glow), var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: inherit; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  ::selection { background: rgba(99, 102, 241, .35); }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 20px 80px; }
+
+  /* ---------------------------------------------------------------- header */
+  header.top {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 6px 2px 22px;
+  }
+  .brand { display: flex; align-items: center; gap: 11px; margin-right: auto; }
+  .brand-mark {
+    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    background: linear-gradient(145deg, #6366f1, #22d3ee);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, .35);
+    font-size: 19px;
+  }
+  .brand h1 { font-size: 18px; margin: 0; letter-spacing: -0.02em; }
+  .brand p { margin: 0; font-size: 12.5px; color: var(--text-dim); }
+  .head-actions { display: flex; gap: 8px; align-items: center; }
+
+  .ghost-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 8px 13px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    text-decoration: none;
+  }
+  .ghost-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+  /* ---------------------------------------------------------------- layout */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  @media (min-width: 1024px) {
+    .layout { grid-template-columns: minmax(0, 1.45fr) minmax(320px, .85fr); align-items: start; }
+    aside.rail { position: sticky; top: 18px; display: grid; gap: 18px; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+  }
+  .card + .card { margin-top: 18px; }
+  .card h2 {
+    font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .card h2 .num {
+    width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
+    background: rgba(99, 102, 241, .16); color: #a5b4fc; font-size: 11.5px; font-weight: 700;
+  }
+  .card .hint { margin: 2px 0 16px; font-size: 13px; color: var(--text-dim); }
+
+  /* ---------------------------------------------------------------- fields */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field > label, .label {
+    display: block; font-size: 12.5px; font-weight: 600; color: var(--text-dim);
+    margin-bottom: 6px; letter-spacing: .01em;
+  }
+  .field .desc { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+  input[type="text"], input[type="url"], input[type="password"], select, textarea {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 11px 13px; font-size: 14px; outline: none;
+    transition: border-color .15s, box-shadow .15s; color: var(--text);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-faint); }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99, 102, 241, .18);
+  }
+  input.invalid, select.invalid { border-color: var(--danger); }
+  .err { display: none; color: #fca5a5; font-size: 12px; margin-top: 6px; }
+  html[data-theme="light"] .err { color: #b91c1c; }
+  .err.show { display: block; }
+  .row { display: grid; gap: 12px; }
+  @media (min-width: 620px) { .row.two { grid-template-columns: 1fr 1fr; } }
+  .inline-row { display: flex; gap: 8px; align-items: stretch; }
+  .inline-row > input { flex: 1; min-width: 0; }
+  .mini-btn {
+    white-space: nowrap; border: 1px solid var(--border); background: var(--surface-2);
+    color: var(--text-dim); border-radius: var(--radius-sm); padding: 0 12px; font-size: 12.5px;
+    cursor: pointer; transition: color .15s, border-color .15s;
+  }
+  .mini-btn:hover { color: var(--text); border-color: var(--border-strong); }
+
+  /* ---------------------------------------------------------------- switch */
+  .switch-row {
+    display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    padding: 11px 2px; border-bottom: 1px dashed var(--border);
+  }
+  .switch-row:last-of-type { border-bottom: 0; }
+  .switch-row .txt { font-size: 13.5px; }
+  .switch-row .txt small { display: block; color: var(--text-faint); font-size: 11.5px; font-weight: 400; }
+  .switch { position: relative; flex: none; width: 44px; height: 26px; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .switch .track {
+    position: absolute; inset: 0; border-radius: 999px; background: rgba(148, 163, 184, .28);
+    transition: background .18s; pointer-events: none;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; transition: transform .18s; box-shadow: 0 2px 6px rgba(0,0,0,.3);
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(99, 102, 241, .3); }
+
+  /* ---------------------------------------------------------------- segmented */
+  .segmented {
+    display: flex; gap: 4px; padding: 4px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 12px;
+  }
+  .segmented label {
+    flex: 1; position: relative; text-align: center; font-size: 12.5px; padding: 8px 6px;
+    border-radius: 9px; cursor: pointer; color: var(--text-dim); transition: background .15s, color .15s;
+    white-space: nowrap;
+  }
+  .segmented input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .segmented label:has(input:checked) { background: var(--accent); color: #fff; font-weight: 600; }
+  .segmented label:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(99, 102, 241, .3); }
+
+  /* ---------------------------------------------------------------- tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab {
+    border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+    padding: 7px 13px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: rgba(99, 102, 241, .16); border-color: rgba(99, 102, 241, .5); color: #c7d2fe; }
+  html[data-theme="light"] .tab[aria-selected="true"] { color: #3730a3; }
+  .tab-panel[hidden] { display: none; }
+
+  /* ---------------------------------------------------------------- icon studio */
+  .icon-studio { display: grid; gap: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .icon-studio { grid-template-columns: 128px minmax(0, 1fr); align-items: start; } }
+  .icon-preview-wrap { display: grid; gap: 8px; justify-items: center; }
+  .icon-holder {
+    width: 128px; height: 128px; border-radius: 30px; overflow: hidden;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; position: relative;
+  }
+  .icon-holder canvas, .icon-holder img { width: 100%; height: 100%; display: block; object-fit: cover; }
+  .icon-holder .empty { font-size: 30px; opacity: .5; }
+  .icon-meta { font-size: 11px; color: var(--text-faint); text-align: center; white-space: nowrap; }
+
+  .drop {
+    border: 1.5px dashed var(--border-strong); border-radius: 14px; padding: 20px;
+    text-align: center; color: var(--text-dim); font-size: 13px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: rgba(99, 102, 241, .08); }
+  .drop strong { color: var(--text); }
+
+  .color-row { display: flex; align-items: center; gap: 10px; }
+  input[type="color"] {
+    -webkit-appearance: none; appearance: none; width: 44px; height: 38px; padding: 0;
+    border: 1px solid var(--border); border-radius: 9px; background: transparent; cursor: pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+  input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 6px; }
+  .hex-input { width: 104px !important; font-family: var(--mono); font-size: 13px !important; text-transform: uppercase; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatch {
+    width: 24px; height: 24px; border-radius: 7px; border: 1px solid rgba(255,255,255,.22);
+    cursor: pointer; padding: 0;
+  }
+  .swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------------------------------------------------------------- preview phone */
+  .phone-stage { display: grid; place-items: center; padding: 4px 0 10px; }
+  .phone {
+    position: relative; width: 168px; border-radius: 30px; padding: 7px;
+    background: linear-gradient(160deg, #2b3550, #131a30);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255,255,255,.08);
+    transition: width .25s ease;
+  }
+  .phone.landscape { width: 264px; border-radius: 24px; }
+  .phone .screen {
+    position: relative; border-radius: 23px; overflow: hidden; background: #0f172a;
+    aspect-ratio: 9 / 19.2; display: flex; flex-direction: column;
+  }
+  .phone.landscape .screen { aspect-ratio: 16 / 9; border-radius: 17px; }
+  .phone.landscape .web { padding: 9px 12px; }
+  .phone .statusbar {
+    flex: none; height: 20px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 10px; font-size: 8.5px; color: #fff; letter-spacing: .02em;
+    background: var(--status-color, #111827);
+  }
+  .phone.fullscreen .statusbar { display: none; }
+  .phone .navy { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .phone .navbar {
+    flex: none; height: 14px; background: var(--status-color, #111827); display: grid; place-items: center;
+  }
+  .phone.fullscreen .navbar { display: none; }
+  .phone .navbar i { width: 34px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.55); display: block; }
+  .phone .web {
+    flex: 1; padding: 12px 10px; display: grid; gap: 7px; align-content: start;
+    background: #f8fafc; color: #64748b; overflow: hidden;
+  }
+  .phone .web .host { font-size: 10px; font-weight: 700; color: #334155; word-break: break-all; }
+  .phone .web .bar { height: 7px; border-radius: 4px; background: #e2e8f0; }
+  .phone .web .bar.w60 { width: 60%; } .phone .web .bar.w80 { width: 80%; } .phone .web .bar.w40 { width: 40%; }
+  .phone .web .tile { height: 46px; border-radius: 8px; background: linear-gradient(120deg,#e2e8f0,#eef2f7); margin-top: 2px; }
+  .phone .notch {
+    position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+    width: 44px; height: 6px; border-radius: 999px; background: #000; opacity: .75;
+  }
+  .phone.fullscreen .notch { opacity: .5; }
+  .app-tile { display: flex; align-items: center; gap: 9px; margin-top: 12px; }
+  .app-tile img, .app-tile canvas {
+    width: 34px; height: 34px; border-radius: 9px; flex: none; object-fit: cover; background: var(--surface-2);
+  }
+  .app-tile span { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------------------------------------------------------------- build panel */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-dim);
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .badge.queued { color: #fbbf24; border-color: rgba(251, 191, 36, .35); background: rgba(251, 191, 36, .08); }
+  .badge.in_progress { color: #60a5fa; border-color: rgba(96, 165, 250, .35); background: rgba(96, 165, 250, .08); }
+  .badge.in_progress .dot { animation: pulse 1.2s infinite; }
+  .badge.success { color: #34d399; border-color: rgba(52, 211, 153, .35); background: rgba(52, 211, 153, .08); }
+  .badge.failure, .badge.cancelled, .badge.timed_out { color: #f87171; border-color: rgba(248, 113, 113, .35); background: rgba(248, 113, 113, .08); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  .primary-btn {
+    width: 100%; border: 0; border-radius: 13px; padding: 14px 18px; cursor: pointer;
+    background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-size: 15px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    box-shadow: 0 12px 26px rgba(79, 70, 229, .35); transition: transform .12s, box-shadow .12s, opacity .12s;
+  }
+  .primary-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(79, 70, 229, .42); }
+  .primary-btn:active:not(:disabled) { transform: translateY(0); }
+  .primary-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+
+  .secondary-row { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-top: 9px; }
+  .secondary-btn {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim);
+    border-radius: 11px; padding: 10px 8px; font-size: 12.5px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: color .15s, border-color .15s;
+  }
+  .secondary-btn:hover { color: var(--text); border-color: var(--border-strong); }
+
+  .status-box {
+    margin-top: 14px; border: 1px solid var(--border); border-radius: 12px; padding: 13px;
+    background: var(--surface-2); font-size: 12.8px; display: none;
+  }
+  .status-box.show { display: block; }
+  .status-box .headline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .status-box .links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .status-box .links a { color: #93c5fd; text-decoration: none; font-size: 12.5px; }
+  .status-box .links a:hover { text-decoration: underline; }
+  .steps { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+  .steps li { display: flex; gap: 7px; align-items: baseline; color: var(--text-faint); font-size: 12px; }
+  .steps li.done { color: var(--text-dim); }
+  .steps li.active { color: var(--text); font-weight: 600; }
+  .steps li .mark { width: 12px; flex: none; text-align: center; }
+
+  .note {
+    font-size: 12px; color: var(--text-faint); line-height: 1.6;
+    border-left: 2px solid var(--border-strong); padding-left: 10px; margin-top: 12px;
+  }
+  .note strong { color: var(--text-dim); }
+  .kbd {
+    font-family: var(--mono); font-size: 11.5px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px;
+  }
+
+  .copy-row { display: flex; gap: 8px; margin-top: 10px; }
+  .copy-row .mini-btn { padding: 8px 12px; }
+  textarea.json {
+    margin-top: 10px; font-family: var(--mono); font-size: 11.5px; min-height: 118px; resize: vertical;
+    display: none; line-height: 1.5;
+  }
+  textarea.json.show { display: block; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px);
+    background: #111827; color: #f8fafc; border: 1px solid rgba(148,163,184,.3);
+    padding: 11px 18px; border-radius: 12px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 50; box-shadow: 0 12px 30px rgba(0,0,0,.4);
+    max-width: calc(100vw - 40px);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  footer.foot { margin-top: 34px; color: var(--text-faint); font-size: 12px; display: grid; gap: 6px; }
+  footer.foot code { font-family: var(--mono); font-size: 11.5px; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">📱</div>
+      <div>
+        <h1>web2apk</h1>
+        <p>URL 하나로 안드로이드 APK · GitHub Actions + Capacitor 8</p>
+      </div>
+    </div>
+    <div class="head-actions">
+      <button class="ghost-btn" id="themeToggle" type="button" aria-label="테마 바꾸기">
+        <span id="themeIcon" aria-hidden="true">☾</span><span id="themeLabel">라이트</span>
+      </button>
+      <a class="ghost-btn" id="repoLink" href="#" target="_blank" rel="noopener">저장소</a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main>
+      <!-- 1. 대상 -->
+      <section class="card" aria-labelledby="step1">
+        <h2 id="step1"><span class="num">1</span> 어떤 웹페이지를 앱으로 만들까요?</h2>
+        <p class="hint">주소만 넣으면 됩니다. 앱은 이 페이지를 전체 화면으로 열어 줍니다.</p>
+
+        <div class="field">
+          <label for="url">웹페이지 주소</label>
+          <input id="url" type="url" inputmode="url" autocomplete="url" spellcheck="false"
+                 placeholder="https://example.com" aria-describedby="urlErr" />
+          <div class="err" id="urlErr" role="alert"></div>
+        </div>
+
+        <div class="row two">
+          <div class="field">
+            <label for="appName">앱 이름</label>
+            <input id="appName" type="text" maxlength="60" placeholder="우리 동네 지도" autocomplete="off"
+                   aria-describedby="appNameErr" />
+            <div class="err" id="appNameErr" role="alert"></div>
+          </div>
+          <div class="field">
+            <label for="appId">패키지명</label>
+            <div class="inline-row">
+              <input id="appId" type="text" spellcheck="false" autocomplete="off"
+                     placeholder="com.poeticecho.myapp" aria-describedby="appIdErr appIdDesc" />
+              <button class="mini-btn" id="appIdSuggest" type="button">자동</button>
+            </div>
+            <div class="desc" id="appIdDesc">앱 이름을 넣으면 자동으로 제안됩니다. 한 번 고치면 더 이상 바뀌지 않아요.</div>
+            <div class="err" id="appIdErr" role="alert"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 아이콘 -->
+      <section class="card" aria-labelledby="step2">
+        <h2 id="step2"><span class="num">2</span> 아이콘</h2>
+        <p class="hint">이미지를 올리거나, 배경색과 글자로 바로 만들 수 있어요. 비워 두면 앱 이름 첫 글자로 자동 생성합니다.</p>
+
+        <div class="tabs" role="tablist" aria-label="아이콘 방식">
+          <button class="tab" role="tab" id="tabGenerate" aria-controls="panelGenerate" aria-selected="true" type="button">🎨 만들기</button>
+          <button class="tab" role="tab" id="tabUpload" aria-controls="panelUpload" aria-selected="false" type="button">🖼️ 업로드</button>
+          <button class="tab" role="tab" id="tabAuto" aria-controls="panelAuto" aria-selected="false" type="button">✨ 자동</button>
+        </div>
+
+        <div class="icon-studio">
+          <div class="icon-preview-wrap">
+            <div class="icon-holder" id="iconHolder">
+              <canvas id="iconCanvas" width="1024" height="1024" aria-label="아이콘 미리보기"></canvas>
+            </div>
+            <div class="icon-meta" id="iconMeta">1024×1024 · PNG</div>
+          </div>
+
+          <div>
+            <div class="tab-panel" id="panelGenerate" role="tabpanel" aria-labelledby="tabGenerate">
+              <div class="row two">
+                <div class="field">
+                  <label for="iconText">글자 / 이모지</label>
+                  <input id="iconText" type="text" maxlength="2" placeholder="예: 수 또는 🚀" value="" />
+                </div>
+                <div class="field">
+                  <label for="iconFont">글꼴 두께</label>
+                  <select id="iconFont">
+                    <option value="800">굵게</option>
+                    <option value="600">보통</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row two">
+                <div class="field">
+                  <span class="label" id="bgLabel">배경색</span>
+                  <div class="color-row">
+                    <input id="iconBg" type="color" value="#6366f1" aria-labelledby="bgLabel" />
+                    <input id="iconBgHex" class="hex-input" type="text" value="#6366F1" spellcheck="false" aria-label="배경색 HEX" />
+                  </div>
+                  <div class="swatches" id="bgSwatches" role="group" aria-label="배경색 프리셋"></div>
+                </div>
+                <div class="field">
+                  <span class="label" id="fgLabel">글자색</span>
+                  <div class="color-row">
+                    <input id="iconFg" type="color" value="#ffffff" aria-labelledby="fgLabel" />
+                    <input id="iconFgHex" class="hex-input" type="text" value="#FFFFFF" spellcheck="false" aria-label="글자색 HEX" />
+                  </div>
+                </div>
+              </div>
+              <button class="mini-btn" id="iconRandom" type="button" style="padding:8px 12px">🎲 색 조합 랜덤</button>
+            </div>
+
+            <div class="tab-panel" id="panelUpload" role="tabpanel" aria-labelledby="tabUpload" hidden>
+              <div class="drop" id="dropZone" tabindex="0" role="button" aria-label="이미지 파일 선택">
+                <strong>이미지를 끌어다 놓거나 클릭</strong><br />
+                PNG · JPG · WEBP — 정사각형으로 가운데를 잘라 1024×1024 로 맞춥니다
+              </div>
+              <input id="iconFile" type="file" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+            </div>
+
+            <div class="tab-panel" id="panelAuto" role="tabpanel" aria-labelledby="tabAuto" hidden>
+              <p class="note" style="margin-top:0">
+                아이콘을 보내지 않으면 빌드 서버가 <strong>앱 이름 첫 글자</strong>를 브랜드 색 배경 위에 그려서 만듭니다.
+                (한글도 지원) 지금은 미리보기만 보여 드릴게요.
+              </p>
+              <button class="mini-btn" id="iconAutoPreview" type="button" style="padding:8px 12px">미리보기 만들기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 옵션 -->
+      <section class="card" aria-labelledby="step3">
+        <h2 id="step3"><span class="num">3</span> 화면 · 동작 옵션</h2>
+        <p class="hint">나중에 다시 빌드하면 언제든 바꿀 수 있습니다.</p>
+
+        <div class="field">
+          <span class="label">화면 방향</span>
+          <div class="segmented" id="orientationGroup" role="radiogroup" aria-label="화면 방향">
+            <label><input type="radio" name="orientation" value="portrait" checked />세로</label>
+            <label><input type="radio" name="orientation" value="landscape" />가로</label>
+            <label><input type="radio" name="orientation" value="sensor" />자동</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="label">안드로이드 뒤로가기 버튼</span>
+          <div class="segmented" id="backGroup" role="radiogroup" aria-label="뒤로가기 동작">
+            <label><input type="radio" name="backButton" value="history_then_exit" checked />이전 페이지 → 앱 종료</label>
+            <label><input type="radio" name="backButton" value="exit_only" />바로 앱 종료</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="label">외부 도메인 링크</span>
+          <div class="segmented" id="externalGroup" role="radiogroup" aria-label="외부 링크 처리">
+            <label><input type="radio" name="externalLinks" value="system_browser" checked />시스템 브라우저</label>
+            <label><input type="radio" name="externalLinks" value="in_app" />앱 안에서</label>
+          </div>
+          <div class="desc">같은 사이트(서브도메인 포함)는 항상 앱 안에서 열립니다.</div>
+        </div>
+
+        <div class="switch-row">
+          <div class="txt">전체화면 <small>상태바·내비바를 숨기고 콘텐츠에 집중</small></div>
+          <label class="switch"><input type="checkbox" id="fullscreen" /><span class="track"></span>
+            <span class="sr-only">전체화면</span></label>
+        </div>
+        <div class="switch-row">
+          <div class="txt">핀치 줌 허용 <small>두 손가락으로 확대·축소</small></div>
+          <label class="switch"><input type="checkbox" id="allowZoom" /><span class="track"></span>
+            <span class="sr-only">핀치 줌 허용</span></label>
+        </div>
+        <div class="switch-row">
+          <div class="txt">당겨서 새로고침 <small>화면을 아래로 당기면 페이지 다시 읽기</small></div>
+          <label class="switch"><input type="checkbox" id="pullToRefresh" /><span class="track"></span>
+            <span class="sr-only">당겨서 새로고침</span></label>
+        </div>
+
+        <div class="field" style="margin-top:16px">
+          <span class="label" id="sbLabel">상태바 색</span>
+          <div class="color-row">
+            <input id="statusColor" type="color" value="#111827" aria-labelledby="sbLabel" />
+            <input id="statusColorHex" class="hex-input" type="text" value="#111827" spellcheck="false" aria-label="상태바 색 HEX" />
+            <div class="swatches" id="sbSwatches" role="group" aria-label="상태바 색 프리셋"></div>
+          </div>
+          <div class="desc">앱을 열 때 스플래시 배경과 런처 아이콘 배경에도 같은 색을 씁니다.</div>
+        </div>
+      </section>
+
+      <!-- 4. 빌드 -->
+      <section class="card" aria-labelledby="step4">
+        <h2 id="step4"><span class="num">4</span> GitHub 로 APK 빌드</h2>
+        <p class="hint">
+          빌드는 GitHub Actions(공개 저장소는 무료)에서 돌아갑니다. 워크플로 파일은
+          <span class="kbd">.github/workflows/build-apk.yml</span> 하나뿐입니다.
+        </p>
+
+        <div class="row two">
+          <div class="field">
+            <label for="repo">저장소 <span aria-hidden="true">owner/repo</span></label>
+            <input id="repo" type="text" placeholder="poeticecho/web2apk" spellcheck="false" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="ref">브랜치</label>
+            <input id="ref" type="text" value="main" spellcheck="false" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="token">Personal Access Token <span style="color:var(--text-faint);font-weight:400">(Fine-grained, Actions: Read and write)</span></label>
+          <div class="inline-row">
+            <input id="token" type="password" placeholder="github_pat_..." spellcheck="false" autocomplete="off" />
+            <button class="mini-btn" id="tokenToggle" type="button">보기</button>
+            <button class="mini-btn" id="tokenClear" type="button">지우기</button>
+          </div>
+          <div class="desc">
+            토큰은 <strong>이 브라우저의 localStorage</strong>에만 저장되고 api.github.com 외에는 전송되지 않습니다.
+            공용 PC 에서는 쓰지 마세요.
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="releaseTag">릴리스 태그 <span style="color:var(--text-faint);font-weight:400">(선택)</span></label>
+          <input id="releaseTag" type="text" placeholder="v1.0.0 — 비우면 Artifact 로만 받습니다" spellcheck="false" autocomplete="off" />
+        </div>
+
+        <button class="primary-btn" id="buildBtn" type="button">🚀 APK 빌드 시작</button>
+        <div class="secondary-row">
+          <button class="secondary-btn" id="copyJsonBtn" type="button">📋 JSON 파라미터 복사</button>
+          <a class="secondary-btn" id="openActionsBtn" href="#" target="_blank" rel="noopener">↗ GitHub Actions 열기</a>
+        </div>
+
+        <div class="status-box" id="statusBox" aria-live="polite">
+          <div class="headline" id="statusHeadline"></div>
+          <div id="statusDetail"></div>
+          <ul class="steps" id="statusSteps"></ul>
+          <div class="links" id="statusLinks"></div>
+        </div>
+
+        <div class="note">
+          <strong>PAT 없이 쓰기:</strong> 위 “JSON 파라미터 복사”로 값을 복사한 뒤 저장소의
+          Actions → Build APK → Run workflow 에 붙여 넣어도 됩니다.
+          워크플로 파일이 default 브랜치에 있어야 API 로 실행됩니다.
+        </div>
+      </section>
+    </main>
+
+    <aside class="rail">
+      <section class="card" aria-labelledby="previewTitle">
+        <h2 id="previewTitle">미리보기</h2>
+        <div class="phone-stage">
+          <div class="phone" id="phone">
+            <div class="screen">
+              <div class="notch" aria-hidden="true"></div>
+              <div class="statusbar" id="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+              <div class="web">
+                <div class="host" id="previewHost">example.com</div>
+                <div class="bar w80"></div>
+                <div class="bar w60"></div>
+                <div class="tile"></div>
+                <div class="bar w40"></div>
+              </div>
+              <div class="navbar"><i></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="app-tile">
+          <canvas id="tileIcon" width="1024" height="1024" aria-hidden="true"></canvas>
+          <span id="tileName">앱 이름</span>
+        </div>
+        <div class="note" id="previewNote">세로 · 상태바 표시</div>
+      </section>
+
+      <section class="card" aria-labelledby="whatTitle">
+        <h2 id="whatTitle">무엇이 만들어지나요?</h2>
+        <div class="note" style="border-left-color:var(--accent)">
+          Capacitor 8 · targetSdk 36(Android 16) · minSdk 24<br />
+          결과물: <span class="kbd">APK</span> (Artifact, 30일 보관) + 선택 시 GitHub Release
+        </div>
+        <div class="note">
+          전체화면·뒤로가기·줌·당겨서 새로고침은 생성된 <span class="kbd">MainActivity.java</span> 에,
+          화면 방향·cleartext 허용은 <span class="kbd">AndroidManifest.xml</span> 에,
+          외부 링크 정책은 <span class="kbd">capacitor.config.json</span> 에 반영됩니다.
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="foot">
+    <div>web2apk · GitHub Actions + Capacitor 8 · 빌드는 저장소의 워크플로에서 실행됩니다.</div>
+    <div>이 페이지는 <code>docs/</code> 폴더에 있어 GitHub Pages 로 바로 배포할 수 있습니다.</div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ------------------------------------------------------------ 유틸
+  const $ = (id) => document.getElementById(id);
+  const STORE = {
+    settings: 'web2apk.settings.v1',
+    repo: 'web2apk.repo',
+    token: 'web2apk.token',
+    ref: 'web2apk.ref',
+    theme: 'web2apk.theme',
+    icon: 'web2apk.icon.v1',
+  };
+  const WORKFLOW_FILE = 'build-apk.yml';
+  const ANDROID_KEYWORDS = new Set(('abstract assert boolean break byte case catch char class const continue default do double else ' +
+    'enum extends final finally float for goto if implements import instanceof int interface long native new package private ' +
+    'protected public return short static strictfp super switch synchronized this throw throws transient try void volatile ' +
+    'while true false null var record yield sealed permits').split(' '));
+
+  function hashString(text) {
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i += 1) {
+      hash ^= text.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  // 서버(scripts/lib/options.mjs)와 같은 규칙
+  function slugifyAppName(name) {
+    const ascii = String(name || '')
+      .normalize('NFKD')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .replace(/^[0-9]+/, (digits) => 'app' + digits);
+    if (ascii.length >= 2) return ascii.slice(0, 24);
+    const hash = hashString(String(name || '')).toString(36).slice(0, 4).padStart(4, '0');
+    return 'app' + hash;
+  }
+  function suggestAppId(name) {
+    return 'com.poeticecho.' + slugifyAppName(name);
+  }
+  function validateAppId(id) {
+    const value = String(id || '').trim();
+    if (!value) return '패키지명을 입력하세요.';
+    const parts = value.split('.');
+    if (parts.length < 2) return '점(.)으로 구분된 2개 이상이어야 합니다. 예: com.poeticecho.myapp';
+    for (const part of parts) {
+      if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(part)) return `"${part}" — 각 조각은 영문자로 시작하고 영문/숫자/밑줄만 쓸 수 있습니다.`;
+      if (ANDROID_KEYWORDS.has(part.toLowerCase())) return `"${part}" 은(는) 예약어라 쓸 수 없습니다.`;
+    }
+    return '';
+  }
+  function normalizeUrl(raw) {
+    let input = String(raw || '').trim();
+    if (!input) return { error: '웹페이지 주소를 입력하세요.' };
+    if (/\s/.test(input)) return { error: '주소에 공백이 있습니다.' };
+    if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(input)) input = 'https://' + input;
+    let parsed;
+    try { parsed = new URL(input); } catch (e) { return { error: 'URL 형식이 올바르지 않습니다.' }; }
+    const scheme = parsed.protocol.replace(':', '').toLowerCase();
+    if (scheme !== 'http' && scheme !== 'https') return { error: 'http:// 또는 https:// 주소만 됩니다.' };
+    if (!parsed.hostname || (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost')) {
+      return { error: '호스트가 올바르지 않습니다.' };
+    }
+    return { url: parsed.toString(), host: parsed.hostname, scheme };
+  }
+  function normalizeHex(value, fallback) {
+    let v = String(value || '').trim();
+    if (!v) return fallback;
+    if (v[0] !== '#') v = '#' + v;
+    if (/^#[0-9a-fA-F]{3}$/.test(v)) v = '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+    if (!/^#[0-9a-fA-F]{6}$/.test(v)) return fallback;
+    return v.toUpperCase();
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  let toastTimer = 0;
+  function toast(message) {
+    const el = $('toast');
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  // ------------------------------------------------------------ 테마
+  const themeToggle = $('themeToggle');
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    $('themeIcon').textContent = theme === 'dark' ? '☾' : '☀';
+    $('themeLabel').textContent = theme === 'dark' ? '라이트' : '다크';
+    themeToggle.setAttribute('aria-pressed', String(theme === 'light'));
+    try { localStorage.setItem(STORE.theme, theme); } catch (e) { /* private mode */ }
+  }
+  (function initTheme() {
+    let saved = null;
+    try { saved = localStorage.getItem(STORE.theme); } catch (e) { /* ignore */ }
+    if (!saved) {
+      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+      saved = prefersLight ? 'light' : 'dark';
+    }
+    applyTheme(saved);
+  })();
+  themeToggle.addEventListener('click', () => {
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  // ------------------------------------------------------------ 아이콘 스튜디오
+  const iconCanvas = $('iconCanvas');
+  const ICON_SIZE = 1024;
+  let uploadedImage = null;   // Image 객체(업로드 모드)
+  let iconMode = 'generate';  // generate | upload | auto
+  let iconDataUrl = '';       // 현재 미리보기 PNG(data URL)
+
+  function drawGeneratedIcon(canvas, opts) {
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width;
+    const bg = opts.bg || '#6366F1';
+    const fg = opts.fg || '#FFFFFF';
+    const text = (opts.text || '').slice(0, 2) || 'A';
+    const weight = opts.weight || '800';
+
+    const grad = ctx.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, shade(bg, 1.14));
+    grad.addColorStop(1, shade(bg, 0.86));
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    // 은은한 하이라이트
+    const glow = ctx.createRadialGradient(size * 0.28, size * 0.22, 0, size * 0.28, size * 0.22, size * 0.72);
+    glow.addColorStop(0, 'rgba(255,255,255,0.16)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, size, size);
+
+    const chars = Array.from(text);
+    const fontSize = chars.length > 1 ? size * 0.42 : size * 0.54;
+    ctx.fillStyle = fg;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = weight + ' ' + fontSize + 'px ' + "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji'," +
+      'system-ui,-apple-system,"Noto Sans KR","Apple SD Gothic Neo",sans-serif';
+    ctx.fillText(text, size / 2, size * 0.53, size * 0.82);
+    return canvas;
+  }
+
+  function drawUploadedIcon(canvas, image) {
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width;
+    const scale = Math.max(size / image.width, size / image.height);
+    const w = image.width * scale;
+    const h = image.height * scale;
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, size, size);
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(image, (size - w) / 2, (size - h) / 2, w, h);
+    return canvas;
+  }
+
+  function shade(hex, amount) {
+    const v = normalizeHex(hex, '#000000').slice(1);
+    const nums = [0, 2, 4].map((i) => parseInt(v.slice(i, i + 2), 16));
+    return '#' + nums.map((n) => Math.max(0, Math.min(255, Math.round(n * amount))).toString(16).padStart(2, '0')).join('');
+  }
+
+  function iconOptions() {
+    return {
+      bg: $('iconBg').value,
+      fg: $('iconFg').value,
+      text: $('iconText').value,
+      weight: $('iconFont').value,
+    };
+  }
+
+  function redrawIcon() {
+    if (iconMode === 'upload' && uploadedImage) {
+      drawUploadedIcon(iconCanvas, uploadedImage);
+    } else if (iconMode === 'auto') {
+      const name = $('appName').value.trim() || 'A';
+      const first = Array.from(name)[0] || 'A';
+      drawGeneratedIcon(iconCanvas, { bg: $('statusColor').value, fg: '#FFFFFF', text: first, weight: '800' });
+    } else {
+      drawGeneratedIcon(iconCanvas, iconOptions());
+    }
+    iconDataUrl = iconCanvas.toDataURL('image/png');
+    const kb = Math.round((iconDataUrl.length - 'data:image/png;base64,'.length) * 0.75 / 1024);
+    $('iconMeta').textContent = '1024×1024 · PNG · 약 ' + kb + 'KB';
+    const tile = $('tileIcon');
+    const tctx = tile.getContext('2d');
+    tctx.clearRect(0, 0, tile.width, tile.height);
+    tctx.drawImage(iconCanvas, 0, 0);
+    saveIconState();
+  }
+
+  function saveIconState() {
+    try {
+      localStorage.setItem(STORE.icon, JSON.stringify({
+        mode: iconMode, text: $('iconText').value, bg: $('iconBg').value,
+        fg: $('iconFg').value, weight: $('iconFont').value,
+      }));
+    } catch (e) { /* ignore quota */ }
+  }
+
+  // 색 프리셋
+  const PRESETS = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#111827', '#FFFFFF'];
+  function renderSwatches(container, input, hexInput) {
+    container.innerHTML = '';
+    PRESETS.forEach((color) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swatch';
+      b.style.background = color;
+      b.setAttribute('aria-label', color);
+      b.setAttribute('aria-pressed', String(normalizeHex(input.value, '') === color));
+      b.addEventListener('click', () => {
+        input.value = color;
+        hexInput.value = color;
+        syncColorPanels();
+        redrawIcon();
+      });
+      container.appendChild(b);
+    });
+  }
+  function syncColorPanels() {
+    document.querySelectorAll('#bgSwatches .swatch').forEach((el) => {
+      el.setAttribute('aria-pressed', String(normalizeHex($('iconBg').value, '') === normalizeHex(el.style.background, '')));
+    });
+    document.querySelectorAll('#sbSwatches .swatch').forEach((el) => {
+      el.setAttribute('aria-pressed', String(normalizeHex($('statusColor').value, '') === normalizeHex(el.style.background, '')));
+    });
+  }
+
+  // 탭
+  function selectMode(mode) {
+    iconMode = mode;
+    const tabs = { generate: 'tabGenerate', upload: 'tabUpload', auto: 'tabAuto' };
+    const panels = { generate: 'panelGenerate', upload: 'panelUpload', auto: 'panelAuto' };
+    Object.keys(tabs).forEach((key) => {
+      const tab = $(tabs[key]);
+      const panel = $(panels[key]);
+      const active = key === mode;
+      tab.setAttribute('aria-selected', String(active));
+      panel.hidden = !active;
+    });
+    redrawIcon();
+  }
+  $('tabGenerate').addEventListener('click', () => selectMode('generate'));
+  $('tabUpload').addEventListener('click', () => selectMode('upload'));
+  $('tabAuto').addEventListener('click', () => selectMode('auto'));
+  $('iconAutoPreview').addEventListener('click', () => { selectMode('auto'); toast('앱 이름 첫 글자로 미리보기를 만들었어요'); });
+
+  ['iconText', 'iconFont'].forEach((id) => $(id).addEventListener('input', () => {
+    if (iconMode !== 'generate') selectMode('generate');
+    redrawIcon();
+  }));
+
+  $('iconBg').addEventListener('input', (e) => { $('iconBgHex').value = e.target.value.toUpperCase(); redrawIcon(); });
+  $('iconBgHex').addEventListener('change', (e) => {
+    const v = normalizeHex(e.target.value, '#6366F1');
+    e.target.value = v; $('iconBg').value = v; redrawIcon();
+  });
+  $('iconFg').addEventListener('input', (e) => { $('iconFgHex').value = e.target.value.toUpperCase(); redrawIcon(); });
+  $('iconFgHex').addEventListener('change', (e) => {
+    const v = normalizeHex(e.target.value, '#FFFFFF');
+    e.target.value = v; $('iconFg').value = v; redrawIcon();
+  });
+  $('iconRandom').addEventListener('click', () => {
+    // 지금 색과 다른 조합을 골라 항상 눈에 띄게 바뀌도록 한다.
+    const current = normalizeHex($('iconBg').value, '');
+    const choices = PRESETS.filter((color) => color !== current);
+    const bg = choices[Math.floor(Math.random() * choices.length)] || '#6366F1';
+    $('iconBg').value = bg; $('iconBgHex').value = bg;
+    $('iconFg').value = '#ffffff'; $('iconFgHex').value = '#FFFFFF';
+    redrawIcon();
+  });
+
+  // 업로드
+  const dropZone = $('dropZone');
+  const fileInput = $('iconFile');
+  function loadFile(file) {
+    if (!file || !/^image\//.test(file.type)) { toast('이미지 파일만 올릴 수 있어요'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        uploadedImage = img;
+        selectMode('upload');
+        redrawIcon();
+        toast('아이콘을 정사각형으로 잘랐어요');
+      };
+      img.onerror = () => toast('이미지를 읽지 못했어요');
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+  });
+  ['dragenter', 'dragover'].forEach((t) => dropZone.addEventListener(t, (e) => {
+    e.preventDefault(); dropZone.classList.add('over');
+  }));
+  ['dragleave', 'drop'].forEach((t) => dropZone.addEventListener(t, (e) => {
+    e.preventDefault(); dropZone.classList.remove('over');
+  }));
+  dropZone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    loadFile(file);
+  });
+  fileInput.addEventListener('change', (e) => loadFile(e.target.files && e.target.files[0]));
+
+  // ------------------------------------------------------------ 상태/폼
+  const state = {
+    appIdDirty: false,
+    building: false,
+    pollTimer: 0,
+    dispatchedAt: 0,
+  };
+
+  const els = {
+    url: $('url'), appName: $('appName'), appId: $('appId'),
+    fullscreen: $('fullscreen'), allowZoom: $('allowZoom'), pullToRefresh: $('pullToRefresh'),
+    statusColor: $('statusColor'), statusColorHex: $('statusColorHex'),
+    repo: $('repo'), ref: $('ref'), token: $('token'), releaseTag: $('releaseTag'),
+  };
+
+  function selectedRadio(name) {
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '';
+  }
+
+  function readSettings() {
+    return {
+      url: els.url.value,
+      appName: els.appName.value,
+      appId: els.appId.value,
+      fullscreen: els.fullscreen.checked,
+      orientation: selectedRadio('orientation') || 'portrait',
+      allowZoom: els.allowZoom.checked,
+      backButton: selectedRadio('backButton') || 'history_then_exit',
+      externalLinks: selectedRadio('externalLinks') || 'system_browser',
+      pullToRefresh: els.pullToRefresh.checked,
+      statusBarColor: els.statusColor.value,
+      releaseTag: els.releaseTag.value,
+      iconMode: iconMode,
+    };
+  }
+
+  let saveTimer = 0;
+  function persistSettings() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try { localStorage.setItem(STORE.settings, JSON.stringify(readSettings())); } catch (e) { /* ignore */ }
+    }, 250);
+  }
+
+  function loadSettings() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(STORE.settings) || 'null'); } catch (e) { data = null; }
+    let icon = null;
+    try { icon = JSON.parse(localStorage.getItem(STORE.icon) || 'null'); } catch (e) { icon = null; }
+
+    if (icon) {
+      if (icon.text !== undefined) $('iconText').value = icon.text;
+      if (icon.bg) { $('iconBg').value = normalizeHex(icon.bg, '#6366F1'); $('iconBgHex').value = normalizeHex(icon.bg, '#6366F1'); }
+      if (icon.fg) { $('iconFg').value = normalizeHex(icon.fg, '#FFFFFF'); $('iconFgHex').value = normalizeHex(icon.fg, '#FFFFFF'); }
+      if (icon.weight) $('iconFont').value = icon.weight;
+      iconMode = icon.mode || 'generate';
+    }
+
+    if (data) {
+      if (data.url) els.url.value = data.url;
+      if (data.appName) els.appName.value = data.appName;
+      if (data.appId) { els.appId.value = data.appId; state.appIdDirty = true; }
+      els.fullscreen.checked = !!data.fullscreen;
+      els.allowZoom.checked = !!data.allowZoom;
+      els.pullToRefresh.checked = !!data.pullToRefresh;
+      if (data.statusBarColor) {
+        const v = normalizeHex(data.statusBarColor, '#111827');
+        els.statusColor.value = v; els.statusColorHex.value = v;
+      }
+      if (data.releaseTag) els.releaseTag.value = data.releaseTag;
+      const setRadio = (name, value) => {
+        const el = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
+        if (el) el.checked = true;
+      };
+      if (data.orientation) setRadio('orientation', data.orientation);
+      if (data.backButton) setRadio('backButton', data.backButton);
+      if (data.externalLinks) setRadio('externalLinks', data.externalLinks);
+    }
+
+    try {
+      els.repo.value = localStorage.getItem(STORE.repo) || '';
+      els.token.value = localStorage.getItem(STORE.token) || '';
+      els.ref.value = localStorage.getItem(STORE.ref) || 'main';
+    } catch (e) { /* ignore */ }
+
+    if (!els.repo.value) {
+      const fromPages = location.hostname.endsWith('.github.io')
+        ? location.hostname.replace('.github.io', '') + '/' + (location.pathname.split('/')[1] || '')
+        : '';
+      if (fromPages) els.repo.value = fromPages;
+    }
+    updateRepoLinks();
+  }
+
+  function updateRepoLinks() {
+    const repo = els.repo.value.trim();
+    const valid = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo);
+    const actionsUrl = valid ? 'https://github.com/' + repo + '/actions/workflows/' + WORKFLOW_FILE : '#';
+    $('openActionsBtn').href = actionsUrl;
+    $('openActionsBtn').setAttribute('aria-disabled', String(!valid));
+    $('repoLink').href = valid ? 'https://github.com/' + repo : '#';
+  }
+
+  // 패키지명 자동 제안
+  els.appName.addEventListener('input', () => {
+    if (!state.appIdDirty) els.appId.value = els.appName.value.trim() ? suggestAppId(els.appName.value.trim()) : '';
+    updatePreview();
+    validate();
+  });
+  els.appId.addEventListener('input', () => { state.appIdDirty = true; validate(); });
+  $('appIdSuggest').addEventListener('click', () => {
+    const name = els.appName.value.trim();
+    if (!name) { toast('앱 이름을 먼저 입력하세요'); return; }
+    state.appIdDirty = false;
+    els.appId.value = suggestAppId(name);
+    validate();
+  });
+
+  // 상태바 색
+  els.statusColor.addEventListener('input', () => {
+    els.statusColorHex.value = els.statusColor.value.toUpperCase();
+    updatePreview(); syncColorPanels(); persistSettings();
+    if (iconMode === 'auto') redrawIcon();
+  });
+  els.statusColorHex.addEventListener('change', () => {
+    const v = normalizeHex(els.statusColorHex.value, '#111827');
+    els.statusColorHex.value = v; els.statusColor.value = v;
+    updatePreview(); syncColorPanels(); persistSettings();
+    if (iconMode === 'auto') redrawIcon();
+  });
+
+  // ------------------------------------------------------------ 미리보기
+  function updatePreview() {
+    const urlInfo = normalizeUrl(els.url.value);
+    const name = els.appName.value.trim();
+    const color = els.statusColor.value || '#111827';
+    const phone = $('phone');
+    phone.style.setProperty('--status-color', color);
+    phone.classList.toggle('fullscreen', els.fullscreen.checked);
+    phone.classList.toggle('landscape', selectedRadio('orientation') === 'landscape');
+    $('previewHost').textContent = urlInfo.host || 'example.com';
+    $('tileName').textContent = name || '앱 이름';
+    const labels = { portrait: '세로', landscape: '가로', sensor: '자동' };
+    $('previewNote').textContent =
+      (labels[selectedRadio('orientation')] || '세로') + ' · ' +
+      (els.fullscreen.checked ? '전체화면(시스템 바 숨김)' : '상태바 표시') + ' · ' + color.toUpperCase();
+    syncColorPanels();
+    persistSettings();
+  }
+
+  // ------------------------------------------------------------ 검증
+  function setError(input, errEl, message) {
+    if (message) {
+      input.classList.add('invalid');
+      input.setAttribute('aria-invalid', 'true');
+      errEl.textContent = message;
+      errEl.classList.add('show');
+    } else {
+      input.classList.remove('invalid');
+      input.removeAttribute('aria-invalid');
+      errEl.textContent = '';
+      errEl.classList.remove('show');
+    }
+  }
+
+  function validate() {
+    const urlInfo = normalizeUrl(els.url.value);
+    let ok = true;
+    if (urlInfo.error && els.url.value.trim()) { setError(els.url, $('urlErr'), urlInfo.error); ok = false; }
+    else if (!els.url.value.trim()) { setError(els.url, $('urlErr'), ''); ok = false; }
+    else setError(els.url, $('urlErr'), '');
+
+    if (!els.appName.value.trim()) ok = false;
+    else setError(els.appName, $('appNameErr'), '');
+
+    const idError = validateAppId(els.appId.value);
+    if (idError) {
+      ok = false;
+      if (els.appId.value.trim()) setError(els.appId, $('appIdErr'), idError);
+      else if (els.appName.value.trim()) setError(els.appId, $('appIdErr'), '앱 이름을 넣으면 자동으로 채워집니다.');
+      else setError(els.appId, $('appIdErr'), '');
+    } else {
+      setError(els.appId, $('appIdErr'), '');
+    }
+
+    return ok;
+  }
+
+  // ------------------------------------------------------------ 페이로드
+  function buildInputs() {
+    const urlInfo = normalizeUrl(els.url.value);
+    const inputs = {
+      url: urlInfo.url || els.url.value,
+      app_name: els.appName.value.trim(),
+      app_id: els.appId.value.trim(),
+      fullscreen: els.fullscreen.checked,
+      orientation: selectedRadio('orientation') || 'portrait',
+      allow_zoom: els.allowZoom.checked,
+      back_button: selectedRadio('backButton') || 'history_then_exit',
+      external_links: selectedRadio('externalLinks') || 'system_browser',
+      pull_to_refresh: els.pullToRefresh.checked,
+      status_bar_color: (els.statusColor.value || '#111827').toUpperCase(),
+      release_tag: els.releaseTag.value.trim(),
+    };
+    if (iconMode !== 'auto' && iconDataUrl) {
+      inputs.icon_base64 = iconDataUrl.replace(/^data:image\/png;base64,/, '');
+    }
+    return inputs;
+  }
+
+  function githubHeaders(token) {
+    const headers = {
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    return headers;
+  }
+
+  function apiError(status, body) {
+    const message = (body && body.message) || '';
+    if (status === 401) return '토큰이 유효하지 않습니다. 새 PAT 를 발급해 주세요.';
+    if (status === 403) return '권한이 부족합니다. PAT 권한에 “Actions: Read and write” 가 필요합니다. ' + (message ? '(' + message + ')' : '');
+    if (status === 404) return '저장소나 워크플로를 찾을 수 없습니다. 저장소 이름과 브랜치, .github/workflows/' + WORKFLOW_FILE + ' 존재 여부를 확인하세요.';
+    if (status === 422) return '입력값이 거부되었습니다(422). 아이콘이 너무 크거나 필수 값이 비었을 수 있어요. ' + (message ? '(' + message + ')' : '');
+    if (status === 429) return '요청이 너무 많습니다. 잠시 뒤 다시 시도해 주세요.';
+    return 'GitHub API 오류 (HTTP ' + status + ')' + (message ? ': ' + message : '');
+  }
+
+  async function dispatchBuild() {
+    if (state.building) return;
+    if (!validate()) { toast('입력값을 먼저 확인해 주세요'); $('url').focus(); return; }
+
+    const repo = els.repo.value.trim();
+    if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) { toast('저장소를 owner/repo 형식으로 입력하세요'); els.repo.focus(); return; }
+    const token = els.token.value.trim();
+    if (!token) { toast('Personal Access Token 을 입력하세요'); els.token.focus(); return; }
+
+    const inputs = buildInputs();
+    const [owner, name] = repo.split('/');
+    const ref = els.ref.value.trim() || 'main';
+
+    if (inputs.icon_base64 && inputs.icon_base64.length > 400000) {
+      toast('아이콘이 커서 GitHub 이 요청을 거부할 수 있어요. 실패하면 assets/icon.png 로 넣어 주세요.');
+    }
+
+    state.building = true;
+    $('buildBtn').disabled = true;
+    showStatus('queued', '빌드를 요청하는 중…', 'GitHub 에 워크플로 실행을 요청했습니다.');
+
+    try {
+      const res = await fetch('https://api.github.com/repos/' + owner + '/' + name + '/actions/workflows/' + WORKFLOW_FILE + '/dispatches', {
+        method: 'POST',
+        headers: githubHeaders(token),
+        body: JSON.stringify({ ref: ref, inputs: inputs }),
+      });
+      if (!res.ok) {
+        let body = null;
+        try { body = await res.json(); } catch (e) { body = null; }
+        throw new Error(apiError(res.status, body));
+      }
+      state.dispatchedAt = Date.now();
+      showStatus('queued', '빌드 요청 완료', '워크플로 실행을 찾는 중입니다… (보통 5~15초)');
+      pollRun(owner, name, token);
+    } catch (error) {
+      state.building = false;
+      $('buildBtn').disabled = false;
+      showStatus('failure', '빌드를 시작하지 못했습니다', escapeHtml(error.message));
+    }
+  }
+
+  function showStatus(kind, title, detail) {
+    const box = $('statusBox');
+    box.classList.add('show');
+    const labels = {
+      queued: '대기 중', in_progress: '빌드 중', success: '성공', failure: '실패',
+      cancelled: '취소됨', skipped: '건너뜀', timed_out: '시간 초과',
+    };
+    $('statusHeadline').innerHTML =
+      '<span class="badge ' + kind + '"><span class="dot"></span>' + (labels[kind] || kind) + '</span>' +
+      '<strong>' + escapeHtml(title) + '</strong>';
+    $('statusDetail').innerHTML = detail || '';
+  }
+
+  function renderSteps(steps) {
+    const list = $('statusSteps');
+    list.innerHTML = '';
+    (steps || []).slice(0, 12).forEach((step) => {
+      const li = document.createElement('li');
+      const done = step.conclusion === 'success';
+      const failed = step.conclusion === 'failure';
+      const active = step.status === 'in_progress';
+      li.className = done ? 'done' : active ? 'active' : '';
+      li.innerHTML = '<span class="mark">' + (done ? '✓' : failed ? '✕' : active ? '•' : '○') + '</span>' +
+        '<span>' + escapeHtml(step.name) + '</span>';
+      list.appendChild(li);
+    });
+  }
+
+  async function pollRun(owner, name, token) {
+    clearTimeout(state.pollTimer);
+    const startedAt = state.dispatchedAt;
+    let attempts = 0;
+    let runId = null;
+
+    const tick = async () => {
+      attempts += 1;
+      try {
+        if (!runId) {
+          const res = await fetch(
+            'https://api.github.com/repos/' + owner + '/' + name + '/actions/workflows/' + WORKFLOW_FILE +
+            '/runs?event=workflow_dispatch&per_page=10', { headers: githubHeaders(token) });
+          if (!res.ok) {
+            let body = null; try { body = await res.json(); } catch (e) { body = null; }
+            throw new Error(apiError(res.status, body));
+          }
+          const data = await res.json();
+          const runs = (data.workflow_runs || []).filter((run) =>
+            new Date(run.created_at).getTime() >= startedAt - 20000);
+          if (runs.length > 0) {
+            const run = runs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+            runId = run.id;
+            showStatus(run.status === 'completed' ? (run.conclusion || 'queued') : run.status,
+              '실행 #' + run.run_number + ' 을(를) 찾았습니다', '진행 상황을 확인하고 있습니다…');
+          } else if (attempts > 25) {
+            throw new Error('실행을 찾지 못했습니다. Actions 탭에서 직접 확인해 주세요. (워크플로가 default 브랜치에 없거나 입력이 거부되었을 수 있습니다)');
+          }
+        }
+
+        if (runId) {
+          const res = await fetch('https://api.github.com/repos/' + owner + '/' + name + '/actions/runs/' + runId, {
+            headers: githubHeaders(token),
+          });
+          if (!res.ok) {
+            let body = null; try { body = await res.json(); } catch (e) { body = null; }
+            throw new Error(apiError(res.status, body));
+          }
+          const run = await res.json();
+          const kind = run.status === 'completed' ? (run.conclusion || 'failure') : run.status;
+          const detail = [];
+          if (run.status === 'completed') {
+            const mins = Math.max(1, Math.round((new Date(run.updated_at) - new Date(run.created_at)) / 60000));
+            detail.push('총 ' + mins + '분 소요 · ' + escapeHtml(run.head_branch || ''));
+            if (run.conclusion === 'success') {
+              detail.push('APK 는 아래 링크의 <strong>Artifacts</strong> 에서 내려받을 수 있습니다.');
+            } else if (run.conclusion === 'failure') {
+              detail.push('실행 로그에서 실패한 단계를 확인해 주세요.');
+            }
+          } else {
+            detail.push(run.status === 'queued' ? '러너 배정을 기다리는 중…' : '빌드가 진행 중입니다…');
+          }
+          showStatus(kind, '실행 #' + run.run_number, detail.join('<br />'));
+          $('statusLinks').innerHTML =
+            '<a href="' + run.html_url + '" target="_blank" rel="noopener">실행 페이지 ↗</a>' +
+            '<a href="' + run.html_url + '#artifacts" target="_blank" rel="noopener">APK 아티팩트 ↗</a>' +
+            '<a href="https://github.com/' + owner + '/' + name + '/actions/workflows/' + WORKFLOW_FILE + '" target="_blank" rel="noopener">전체 실행 기록 ↗</a>';
+
+          try {
+            const jobsRes = await fetch('https://api.github.com/repos/' + owner + '/' + name + '/actions/runs/' + runId + '/jobs', {
+              headers: githubHeaders(token),
+            });
+            if (jobsRes.ok) {
+              const jobsData = await jobsRes.json();
+              const steps = (jobsData.jobs && jobsData.jobs[0] && jobsData.jobs[0].steps) || [];
+              renderSteps(steps);
+            }
+          } catch (e) { /* 단계 정보는 없어도 괜찮다 */ }
+
+          if (run.status === 'completed') {
+            state.building = false;
+            $('buildBtn').disabled = false;
+            if (run.conclusion === 'success') toast('APK 빌드 성공!');
+            return;
+          }
+        }
+        state.pollTimer = setTimeout(tick, 5000);
+      } catch (error) {
+        state.building = false;
+        $('buildBtn').disabled = false;
+        showStatus('failure', '상태 확인 실패', escapeHtml(error.message));
+      }
+    };
+
+    tick();
+  }
+
+  // ------------------------------------------------------------ 버튼들
+  $('buildBtn').addEventListener('click', dispatchBuild);
+
+  $('copyJsonBtn').addEventListener('click', async () => {
+    const inputs = buildInputs();
+    const payload = { ref: els.ref.value.trim() || 'main', inputs: inputs };
+    const json = JSON.stringify(payload, null, 2);
+    const summary = [
+      'repo: ' + (els.repo.value.trim() || '(저장소를 입력하세요)'),
+      'workflow: ' + WORKFLOW_FILE,
+      '',
+      json,
+    ].join('\n');
+    try {
+      await navigator.clipboard.writeText(summary);
+      toast('JSON 파라미터를 복사했어요');
+    } catch (e) {
+      window.prompt('복사할 JSON:', summary);
+    }
+    let box = $('jsonBox');
+    if (!box) {
+      box = document.createElement('textarea');
+      box.id = 'jsonBox';
+      box.className = 'json';
+      box.readOnly = true;
+      $('statusBox').parentNode.insertBefore(box, $('statusBox').nextSibling);
+    }
+    box.value = summary;
+    box.classList.add('show');
+  });
+
+  $('tokenToggle').addEventListener('click', () => {
+    const isPassword = els.token.type === 'password';
+    els.token.type = isPassword ? 'text' : 'password';
+    $('tokenToggle').textContent = isPassword ? '숨기기' : '보기';
+  });
+  $('tokenClear').addEventListener('click', () => {
+    els.token.value = '';
+    try { localStorage.removeItem(STORE.token); } catch (e) { /* ignore */ }
+    toast('토큰을 지웠어요');
+  });
+
+  [els.repo, els.ref, els.token].forEach((el) => el.addEventListener('input', () => {
+    try {
+      localStorage.setItem(STORE.repo, els.repo.value.trim());
+      localStorage.setItem(STORE.ref, els.ref.value.trim());
+      localStorage.setItem(STORE.token, els.token.value.trim());
+    } catch (e) { /* ignore */ }
+    updateRepoLinks();
+  }));
+
+  [els.fullscreen, els.allowZoom, els.pullToRefresh].forEach((el) => el.addEventListener('change', updatePreview));
+  document.querySelectorAll('input[name="orientation"], input[name="backButton"], input[name="externalLinks"]')
+    .forEach((el) => el.addEventListener('change', updatePreview));
+  els.url.addEventListener('input', () => { updatePreview(); validate(); });
+  els.releaseTag.addEventListener('input', persistSettings);
+
+  // ------------------------------------------------------------ 시작
+  renderSwatches($('bgSwatches'), $('iconBg'), $('iconBgHex'));
+  renderSwatches($('sbSwatches'), els.statusColor, els.statusColorHex);
+  loadSettings();
+  selectMode(iconMode);
+  redrawIcon();
+  updatePreview();
+  validate();
+
+  // 테스트/디버깅용 (window.web2apk 로 상태를 읽을 수 있다)
+  window.web2apk = {
+    buildInputs: buildInputs,
+    validate: validate,
+    normalizeUrl: normalizeUrl,
+    suggestAppId: suggestAppId,
+    slugifyAppName: slugifyAppName,
+    validateAppId: validateAppId,
+    iconDataUrl: () => iconDataUrl,
+    iconMode: () => iconMode,
+    selectMode: selectMode,
+    readSettings: readSettings,
+    dispatchBuild: dispatchBuild,
+  };
+})();
+</script>
+</body>
+</html>

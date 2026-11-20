@@ -1,0 +1,16 @@
+node_modules/
+android/
+www/
+dist/
+work/
+.web2apk/
+capacitor.config.json
+*.keystore
+*.apk
+.DS_Store
+
+# 테스트 임시 산출물
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log
