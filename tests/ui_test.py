@@ -204,6 +204,11 @@ def main() -> int:
         chips = page.eval_on_selector_all(".stepchip", "els => els.map(e => e.className)")
         check("is-done" in chips[0] and "is-current" in chips[1], f"상단 칩: 1단계 완료·2단계 현재 ({chips[0]})")
         check(page.inner_text(".stepchip[data-goto='1'] .n") == "✓", "완료된 단계는 체크 표시")
+        slide_state = page.eval_on_selector(".step[data-step='1']",
+            "el => ({ transform: getComputedStyle(el).transform, transition: getComputedStyle(el).transitionProperty, opacity: getComputedStyle(el).opacity })")
+        check("transform" in slide_state["transition"], f"단계 카드에 슬라이드 전환 선언 ({slide_state['transition']})")
+        check(slide_state["transform"] != "none", f"이전 단계 카드는 옆으로 밀린 상태 ({slide_state['transform']})")
+        check(float(slide_state["opacity"]) < 0.06, f"이전 단계 카드는 페이드 아웃 (opacity {slide_state['opacity']})")
         check(not page.is_disabled("#prevBtn"), "2단계에서 ‘← 이전’ 활성")
         check_no_scroll(page, "desktop step2")
 
