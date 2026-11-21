@@ -117,8 +117,7 @@ jobs:
         run: |
           set -euo pipefail
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" 
-"build-tools;35.0.0" > /dev/null
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" "build-tools;35.0.0" > /dev/null
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
@@ -162,8 +161,7 @@ jobs:
         env:
           WEB2APK_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           WEB2APK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          WEB2APK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD 
-}}
+          WEB2APK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: ./gradlew ${{ steps.signing.outputs.assemble_task || 'assembleDebug' }} --no-daemon --stacktrace
 
       - name: Collect APK
@@ -220,8 +218,7 @@ jobs:
         with:
           tag_name: ${{ steps.opts.outputs.release_tag }}
           name: ${{ steps.opts.outputs.app_name }} ${{ steps.opts.outputs.release_tag }}
-          files: $
-{{ steps.apk.outputs.apk_path }}
+          files: ${{ steps.apk.outputs.apk_path }}
           body: |
             **${{ steps.opts.outputs.app_name }}** APK 자동 빌드 (web2apk)
 
