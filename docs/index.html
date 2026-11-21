@@ -21,9 +21,9 @@
   }
   html[data-theme="dark"] {
     --bg: #0b1020;
-    --bg-glow: radial-gradient(1200px 600px at 15% -10%, rgba(99, 102, 241, .28), transparent 60%),
-               radial-gradient(900px 500px at 100% 0%, rgba(14, 165, 233, .18), transparent 55%);
-    --surface: rgba(19, 26, 48, .82);
+    --bg-glow: radial-gradient(1200px 600px at 15% -10%, rgba(99, 102, 241, .26), transparent 60%),
+               radial-gradient(900px 500px at 100% 0%, rgba(14, 165, 233, .16), transparent 55%);
+    --surface: rgba(19, 26, 48, .86);
     --surface-solid: #131a30;
     --surface-2: rgba(255, 255, 255, .04);
     --border: rgba(148, 163, 184, .18);
@@ -33,12 +33,14 @@
     --text-faint: #6b7899;
     --input-bg: rgba(8, 12, 24, .55);
     --shadow: 0 24px 60px rgba(3, 7, 18, .55);
+    --bar: rgba(11, 16, 32, .78);
+    --chip: rgba(255, 255, 255, .05);
   }
   html[data-theme="light"] {
     --bg: #f4f6fb;
-    --bg-glow: radial-gradient(1100px 560px at 10% -10%, rgba(99, 102, 241, .16), transparent 60%),
-               radial-gradient(800px 460px at 100% 0%, rgba(14, 165, 233, .12), transparent 55%);
-    --surface: rgba(255, 255, 255, .88);
+    --bg-glow: radial-gradient(1100px 560px at 10% -10%, rgba(99, 102, 241, .15), transparent 60%),
+               radial-gradient(800px 460px at 100% 0%, rgba(14, 165, 233, .11), transparent 55%);
+    --surface: rgba(255, 255, 255, .9);
     --surface-solid: #ffffff;
     --surface-2: rgba(15, 23, 42, .03);
     --border: rgba(15, 23, 42, .10);
@@ -48,88 +50,163 @@
     --text-faint: #8592ab;
     --input-bg: #ffffff;
     --shadow: 0 20px 50px rgba(15, 23, 42, .10);
+    --bar: rgba(255, 255, 255, .82);
+    --chip: rgba(15, 23, 42, .04);
   }
 
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+  html { height: 100%; overflow: hidden; }
   body {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
     background: var(--bg-glow), var(--bg);
     background-attachment: fixed;
     color: var(--text);
     font-family: var(--font);
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 14.5px;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
   }
   a { color: inherit; }
   button, input, select, textarea { font: inherit; color: inherit; }
   ::selection { background: rgba(99, 102, 241, .35); }
 
-  .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 20px 80px; }
+  /* ---------------------------------------------------------------- shell */
+  .app {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
   /* ---------------------------------------------------------------- header */
   header.top {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    padding: 6px 2px 22px;
+    flex: none;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bar);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 6;
   }
-  .brand { display: flex; align-items: center; gap: 11px; margin-right: auto; }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
   .brand-mark {
-    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+    width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center;
     background: linear-gradient(145deg, #6366f1, #22d3ee);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, .35);
-    font-size: 19px;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, .35);
+    font-size: 16px; flex: none;
   }
-  .brand h1 { font-size: 18px; margin: 0; letter-spacing: -0.02em; }
-  .brand p { margin: 0; font-size: 12.5px; color: var(--text-dim); }
-  .head-actions { display: flex; gap: 8px; align-items: center; }
+  .brand h1 { font-size: 15.5px; margin: 0; letter-spacing: -0.02em; line-height: 1.2; }
+  .brand p { margin: 0; font-size: 11px; color: var(--text-faint); white-space: nowrap; }
+  .head-actions { display: flex; gap: 7px; align-items: center; justify-self: end; }
+
+  @media (max-width: 760px) {
+    header.top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "brand actions" "stepper stepper";
+      row-gap: 6px;
+    }
+    .brand { grid-area: brand; }
+    .head-actions { grid-area: actions; }
+    .stepper { grid-area: stepper; justify-content: flex-start; }
+  }
 
   .ghost-btn {
-    display: inline-flex; align-items: center; gap: 7px;
+    display: inline-flex; align-items: center; gap: 6px;
     background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 8px 13px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    padding: 7px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
     transition: border-color .15s, color .15s, background .15s;
-    text-decoration: none;
+    text-decoration: none; white-space: nowrap;
   }
   .ghost-btn:hover { border-color: var(--border-strong); color: var(--text); }
 
-  /* ---------------------------------------------------------------- layout */
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
-  @media (min-width: 1024px) {
-    .layout { grid-template-columns: minmax(0, 1.45fr) minmax(320px, .85fr); align-items: start; }
-    aside.rail { position: sticky; top: 18px; display: grid; gap: 18px; }
+  /* ---------------------------------------------------------------- stepper */
+  .stepper {
+    display: flex; align-items: center; justify-content: center; gap: 2px;
+    min-width: 0; overflow-x: auto; scrollbar-width: none;
   }
+  .stepper::-webkit-scrollbar { display: none; }
+  .stepchip {
+    display: inline-flex; align-items: center; gap: 6px; flex: none;
+    background: transparent; border: 1px solid transparent; color: var(--text-faint);
+    padding: 5px 9px; border-radius: 999px; font-size: 12px; cursor: pointer;
+    transition: background .18s, color .18s, border-color .18s;
+  }
+  .stepchip .n {
+    width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--chip); border: 1px solid var(--border); font-size: 10.5px; font-weight: 700;
+    transition: background .18s, color .18s, border-color .18s;
+  }
+  .stepchip:hover { color: var(--text-dim); border-color: var(--border); }
+  .stepchip.is-done { color: var(--text-dim); }
+  .stepchip.is-done .n { color: #34d399; border-color: rgba(52, 211, 153, .45); background: rgba(52, 211, 153, .12); }
+  .stepchip.is-current {
+    color: var(--text); background: rgba(99, 102, 241, .16); border-color: rgba(99, 102, 241, .45);
+  }
+  .stepchip.is-current .n { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .stepchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sep { color: var(--text-faint); opacity: .55; font-size: 11px; flex: none; }
 
-  .card {
+  /* ---------------------------------------------------------------- stage */
+  .stage {
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 12px 14px;
+  }
+  .viewport { position: relative; flex: 1; min-height: 0; min-width: 0; }
+
+  .step {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; min-height: 0;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
+    border-radius: 18px;
+    padding: 15px 16px;
     box-shadow: var(--shadow);
     backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    opacity: 0; visibility: hidden;
+    transform: translateX(34px);
+    pointer-events: none;
+    transition: opacity .26s ease, transform .34s cubic-bezier(.22, .7, .3, 1), visibility .34s;
+    will-change: transform, opacity;
   }
-  .card + .card { margin-top: 18px; }
-  .card h2 {
-    font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em;
-    display: flex; align-items: center; gap: 9px;
+  .step.left { transform: translateX(-34px); }
+  .step.active { opacity: 1; visibility: visible; transform: none; pointer-events: auto; }
+
+  .step-head { flex: none; display: flex; align-items: flex-start; gap: 10px; padding-bottom: 10px; }
+  .step-head .num {
+    width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; flex: none;
+    background: rgba(99, 102, 241, .16); color: #a5b4fc; font-size: 12px; font-weight: 700;
+    margin-top: 1px;
   }
-  .card h2 .num {
-    width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center;
-    background: rgba(99, 102, 241, .16); color: #a5b4fc; font-size: 11.5px; font-weight: 700;
-  }
-  .card .hint { margin: 2px 0 16px; font-size: 13px; color: var(--text-dim); }
+  .step-head h2 { font-size: 15px; margin: 0; letter-spacing: -0.01em; line-height: 1.35; }
+  .step-head .hint { margin: 2px 0 0; font-size: 12px; color: var(--text-dim); word-break: keep-all; overflow-wrap: anywhere; }
+
+  .step-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 2px; display: flex; flex-direction: column; }
+  .step-body::-webkit-scrollbar { width: 6px; }
+  .step-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+  .step-body::-webkit-scrollbar-track { background: transparent; }
 
   /* ---------------------------------------------------------------- fields */
-  .field { margin-bottom: 14px; }
+  .field { margin-bottom: 12px; }
   .field:last-child { margin-bottom: 0; }
   .field > label, .label {
-    display: block; font-size: 12.5px; font-weight: 600; color: var(--text-dim);
-    margin-bottom: 6px; letter-spacing: .01em;
+    display: block; font-size: 12px; font-weight: 600; color: var(--text-dim);
+    margin-bottom: 5px; letter-spacing: .01em;
   }
-  .field .desc { font-size: 12px; color: var(--text-faint); margin-top: 6px; }
+  .field .desc { font-size: 11.5px; color: var(--text-faint); margin-top: 5px; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
   input[type="text"], input[type="url"], input[type="password"], select, textarea {
     width: 100%; background: var(--input-bg); border: 1px solid var(--border);
-    border-radius: var(--radius-sm); padding: 11px 13px; font-size: 14px; outline: none;
+    border-radius: var(--radius-sm); padding: 9px 12px; font-size: 13.5px; outline: none;
     transition: border-color .15s, box-shadow .15s; color: var(--text);
   }
   input::placeholder, textarea::placeholder { color: var(--text-faint); }
@@ -137,152 +214,153 @@
     border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99, 102, 241, .18);
   }
   input.invalid, select.invalid { border-color: var(--danger); }
-  .err { display: none; color: #fca5a5; font-size: 12px; margin-top: 6px; }
+  .err { display: none; color: #fca5a5; font-size: 11.5px; margin-top: 5px; line-height: 1.4; }
   html[data-theme="light"] .err { color: #b91c1c; }
   .err.show { display: block; }
   .row { display: grid; gap: 12px; }
-  @media (min-width: 620px) { .row.two { grid-template-columns: 1fr 1fr; } }
-  .inline-row { display: flex; gap: 8px; align-items: stretch; }
+  .row + .field { margin-top: 4px; }
+  @media (min-width: 640px) { .row.two { grid-template-columns: 1fr 1fr; } }
+  .inline-row { display: flex; gap: 7px; align-items: stretch; }
   .inline-row > input { flex: 1; min-width: 0; }
   .mini-btn {
     white-space: nowrap; border: 1px solid var(--border); background: var(--surface-2);
-    color: var(--text-dim); border-radius: var(--radius-sm); padding: 0 12px; font-size: 12.5px;
+    color: var(--text-dim); border-radius: var(--radius-sm); padding: 0 11px; font-size: 12px;
     cursor: pointer; transition: color .15s, border-color .15s;
   }
   .mini-btn:hover { color: var(--text); border-color: var(--border-strong); }
 
   /* ---------------------------------------------------------------- switch */
   .switch-row {
-    display: flex; align-items: center; gap: 12px; justify-content: space-between;
-    padding: 11px 2px; border-bottom: 1px dashed var(--border);
+    display: flex; align-items: center; gap: 10px; justify-content: space-between;
+    padding: 8px 2px; border-bottom: 1px dashed var(--border);
   }
   .switch-row:last-of-type { border-bottom: 0; }
-  .switch-row .txt { font-size: 13.5px; }
-  .switch-row .txt small { display: block; color: var(--text-faint); font-size: 11.5px; font-weight: 400; }
-  .switch { position: relative; flex: none; width: 44px; height: 26px; }
+  .switch-row .txt { font-size: 13px; line-height: 1.25; word-break: keep-all; }
+  .switch-row .txt small { display: block; color: var(--text-faint); font-size: 11px; font-weight: 400; }
+  .switch { position: relative; flex: none; width: 42px; height: 25px; }
   .switch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
   .switch .track {
     position: absolute; inset: 0; border-radius: 999px; background: rgba(148, 163, 184, .28);
     transition: background .18s; pointer-events: none;
   }
   .switch .track::after {
-    content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%;
+    content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%;
     background: #fff; transition: transform .18s; box-shadow: 0 2px 6px rgba(0,0,0,.3);
   }
   .switch input:checked + .track { background: var(--accent); }
-  .switch input:checked + .track::after { transform: translateX(18px); }
+  .switch input:checked + .track::after { transform: translateX(17px); }
   .switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(99, 102, 241, .3); }
 
   /* ---------------------------------------------------------------- segmented */
   .segmented {
-    display: flex; gap: 4px; padding: 4px; background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 12px;
+    display: flex; gap: 3px; padding: 3px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 11px;
   }
   .segmented label {
-    flex: 1; position: relative; text-align: center; font-size: 12.5px; padding: 8px 6px;
-    border-radius: 9px; cursor: pointer; color: var(--text-dim); transition: background .15s, color .15s;
-    white-space: nowrap;
+    flex: 1; position: relative; text-align: center; font-size: 12px; padding: 7px 5px;
+    border-radius: 8px; cursor: pointer; color: var(--text-dim); transition: background .15s, color .15s;
+    white-space: nowrap; line-height: 1.2;
   }
-  .segmented input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .segmented input { position: absolute; opacity: 0; inset: 0; cursor: pointer; margin: 0; }
   .segmented label:has(input:checked) { background: var(--accent); color: #fff; font-weight: 600; }
   .segmented label:has(input:focus-visible) { box-shadow: 0 0 0 3px rgba(99, 102, 241, .3); }
 
   /* ---------------------------------------------------------------- tabs */
-  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
   .tab {
     border: 1px solid var(--border); background: transparent; color: var(--text-dim);
-    padding: 7px 13px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; cursor: pointer;
   }
   .tab[aria-selected="true"] { background: rgba(99, 102, 241, .16); border-color: rgba(99, 102, 241, .5); color: #c7d2fe; }
   html[data-theme="light"] .tab[aria-selected="true"] { color: #3730a3; }
   .tab-panel[hidden] { display: none; }
 
   /* ---------------------------------------------------------------- icon studio */
-  .icon-studio { display: grid; gap: 16px; grid-template-columns: 1fr; }
-  @media (min-width: 560px) { .icon-studio { grid-template-columns: 128px minmax(0, 1fr); align-items: start; } }
-  .icon-preview-wrap { display: grid; gap: 8px; justify-items: center; }
+  .icon-studio { display: grid; gap: 14px; grid-template-columns: 104px minmax(0, 1fr); align-items: start; }
+  .icon-studio > * { min-width: 0; }
+  .icon-preview-wrap { display: grid; gap: 6px; justify-items: center; min-width: 0; }
   .icon-holder {
-    width: 128px; height: 128px; border-radius: 30px; overflow: hidden;
+    width: 104px; height: 104px; border-radius: 26px; overflow: hidden;
     background: var(--surface-2); border: 1px solid var(--border);
     display: grid; place-items: center; position: relative;
   }
   .icon-holder canvas, .icon-holder img { width: 100%; height: 100%; display: block; object-fit: cover; }
-  .icon-holder .empty { font-size: 30px; opacity: .5; }
-  .icon-meta { font-size: 11px; color: var(--text-faint); text-align: center; white-space: nowrap; }
+  .icon-meta { font-size: 10.5px; color: var(--text-faint); text-align: center; white-space: normal; line-height: 1.35; max-width: 100%; }
+  .mini-grid { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  .icon-studio > div:last-child { max-width: 660px; }
 
   .drop {
-    border: 1.5px dashed var(--border-strong); border-radius: 14px; padding: 20px;
-    text-align: center; color: var(--text-dim); font-size: 13px; cursor: pointer;
-    transition: border-color .15s, background .15s;
+    border: 1.5px dashed var(--border-strong); border-radius: 14px; padding: 16px 12px;
+    text-align: center; color: var(--text-dim); font-size: 12.5px; cursor: pointer;
+    transition: border-color .15s, background .15s; line-height: 1.5;
   }
   .drop:hover, .drop.over { border-color: var(--accent); background: rgba(99, 102, 241, .08); }
   .drop strong { color: var(--text); }
 
-  .color-row { display: flex; align-items: center; gap: 10px; }
+  .color-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   input[type="color"] {
-    -webkit-appearance: none; appearance: none; width: 44px; height: 38px; padding: 0;
-    border: 1px solid var(--border); border-radius: 9px; background: transparent; cursor: pointer;
+    -webkit-appearance: none; appearance: none; width: 40px; height: 35px; padding: 0;
+    border: 1px solid var(--border); border-radius: 9px; background: transparent; cursor: pointer; flex: none;
   }
   input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
   input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 6px; }
-  .hex-input { width: 104px !important; font-family: var(--mono); font-size: 13px !important; text-transform: uppercase; }
-  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hex-input { width: 92px !important; font-family: var(--mono); font-size: 12px !important; text-transform: uppercase; flex: none; }
+  .swatches { display: flex; gap: 5px; flex-wrap: wrap; }
   .swatch {
-    width: 24px; height: 24px; border-radius: 7px; border: 1px solid rgba(255,255,255,.22);
+    width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(255,255,255,.22);
     cursor: pointer; padding: 0;
   }
   .swatch[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ---------------------------------------------------------------- preview phone */
-  .phone-stage { display: grid; place-items: center; padding: 4px 0 10px; }
+  .phone-stage { display: grid; place-items: center; padding: 2px 0 8px; }
   .phone {
-    position: relative; width: 168px; border-radius: 30px; padding: 7px;
+    position: relative; width: 158px; border-radius: 28px; padding: 6px;
     background: linear-gradient(160deg, #2b3550, #131a30);
-    box-shadow: 0 18px 40px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255,255,255,.08);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, .45), inset 0 0 0 1px rgba(255,255,255,.08);
     transition: width .25s ease;
   }
-  .phone.landscape { width: 264px; border-radius: 24px; }
+  .phone.landscape { width: 244px; border-radius: 22px; }
   .phone .screen {
-    position: relative; border-radius: 23px; overflow: hidden; background: #0f172a;
+    position: relative; border-radius: 22px; overflow: hidden; background: #0f172a;
     aspect-ratio: 9 / 19.2; display: flex; flex-direction: column;
   }
-  .phone.landscape .screen { aspect-ratio: 16 / 9; border-radius: 17px; }
-  .phone.landscape .web { padding: 9px 12px; }
+  .phone.landscape .screen { aspect-ratio: 16 / 9; border-radius: 16px; }
+  .phone.landscape .web { padding: 8px 10px; }
   .phone .statusbar {
-    flex: none; height: 20px; display: flex; align-items: center; justify-content: space-between;
-    padding: 0 10px; font-size: 8.5px; color: #fff; letter-spacing: .02em;
+    flex: none; height: 19px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 9px; font-size: 8px; color: #fff; letter-spacing: .02em;
     background: var(--status-color, #111827);
   }
   .phone.fullscreen .statusbar { display: none; }
-  .phone .navy { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .phone .navbar {
-    flex: none; height: 14px; background: var(--status-color, #111827); display: grid; place-items: center;
+    flex: none; height: 13px; background: var(--status-color, #111827); display: grid; place-items: center;
   }
   .phone.fullscreen .navbar { display: none; }
-  .phone .navbar i { width: 34px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.55); display: block; }
+  .phone .navbar i { width: 32px; height: 3px; border-radius: 3px; background: rgba(255,255,255,.55); display: block; }
   .phone .web {
-    flex: 1; padding: 12px 10px; display: grid; gap: 7px; align-content: start;
+    flex: 1; padding: 10px 9px; display: grid; gap: 6px; align-content: start;
     background: #f8fafc; color: #64748b; overflow: hidden;
   }
-  .phone .web .host { font-size: 10px; font-weight: 700; color: #334155; word-break: break-all; }
-  .phone .web .bar { height: 7px; border-radius: 4px; background: #e2e8f0; }
+  .phone .web .host { font-size: 9.5px; font-weight: 700; color: #334155; word-break: break-all; }
+  .phone .web .bar { height: 6px; border-radius: 4px; background: #e2e8f0; }
   .phone .web .bar.w60 { width: 60%; } .phone .web .bar.w80 { width: 80%; } .phone .web .bar.w40 { width: 40%; }
-  .phone .web .tile { height: 46px; border-radius: 8px; background: linear-gradient(120deg,#e2e8f0,#eef2f7); margin-top: 2px; }
+  .phone .web .tile { height: 40px; border-radius: 8px; background: linear-gradient(120deg,#e2e8f0,#eef2f7); margin-top: 2px; }
   .phone .notch {
-    position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
-    width: 44px; height: 6px; border-radius: 999px; background: #000; opacity: .75;
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 5px; border-radius: 999px; background: #000; opacity: .75;
   }
   .phone.fullscreen .notch { opacity: .5; }
-  .app-tile { display: flex; align-items: center; gap: 9px; margin-top: 12px; }
+  .app-tile { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
   .app-tile img, .app-tile canvas {
-    width: 34px; height: 34px; border-radius: 9px; flex: none; object-fit: cover; background: var(--surface-2);
+    width: 32px; height: 32px; border-radius: 9px; flex: none; object-fit: cover; background: var(--surface-2);
   }
-  .app-tile span { font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .app-tile span { font-size: 11.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---------------------------------------------------------------- build panel */
   .badge {
-    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
-    font-size: 12px; font-weight: 600; border: 1px solid var(--border);
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; border: 1px solid var(--border);
     background: var(--surface-2); color: var(--text-dim);
   }
   .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
@@ -294,319 +372,521 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
   .primary-btn {
-    width: 100%; border: 0; border-radius: 13px; padding: 14px 18px; cursor: pointer;
-    background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-size: 15px; font-weight: 700;
-    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    width: 100%; border: 0; border-radius: 12px; padding: 12px 18px; cursor: pointer;
+    background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-size: 14px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     box-shadow: 0 12px 26px rgba(79, 70, 229, .35); transition: transform .12s, box-shadow .12s, opacity .12s;
   }
   .primary-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(79, 70, 229, .42); }
   .primary-btn:active:not(:disabled) { transform: translateY(0); }
   .primary-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
 
-  .secondary-row { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-top: 9px; }
+  .secondary-row { display: grid; gap: 7px; grid-template-columns: 1fr 1fr; margin-top: 8px; }
   .secondary-btn {
     border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim);
-    border-radius: 11px; padding: 10px 8px; font-size: 12.5px; cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    transition: color .15s, border-color .15s;
+    border-radius: 10px; padding: 9px 6px; font-size: 12px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    transition: color .15s, border-color .15s; text-decoration: none; white-space: nowrap;
   }
   .secondary-btn:hover { color: var(--text); border-color: var(--border-strong); }
 
   .status-box {
-    margin-top: 14px; border: 1px solid var(--border); border-radius: 12px; padding: 13px;
-    background: var(--surface-2); font-size: 12.8px; display: none;
+    margin-top: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 11px;
+    background: var(--surface-2); font-size: 12.3px; display: none; line-height: 1.5;
   }
   .status-box.show { display: block; }
-  .status-box .headline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-  .status-box .links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
-  .status-box .links a { color: #93c5fd; text-decoration: none; font-size: 12.5px; }
+  .status-box .headline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .status-box .links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .status-box .links a { color: #93c5fd; text-decoration: none; font-size: 12px; }
+  html[data-theme="light"] .status-box .links a { color: #1d4ed8; }
   .status-box .links a:hover { text-decoration: underline; }
-  .steps { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-  .steps li { display: flex; gap: 7px; align-items: baseline; color: var(--text-faint); font-size: 12px; }
+  .steps { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; }
+  .steps li { display: flex; gap: 6px; align-items: baseline; color: var(--text-faint); font-size: 11.5px; }
   .steps li.done { color: var(--text-dim); }
   .steps li.active { color: var(--text); font-weight: 600; }
-  .steps li .mark { width: 12px; flex: none; text-align: center; }
+  .steps li .mark { width: 11px; flex: none; text-align: center; }
 
   .note {
-    font-size: 12px; color: var(--text-faint); line-height: 1.6;
-    border-left: 2px solid var(--border-strong); padding-left: 10px; margin-top: 12px;
+    font-size: 11.5px; color: var(--text-faint); line-height: 1.55;
+    border-left: 2px solid var(--border-strong); padding-left: 9px; margin-top: 10px;
+    word-break: keep-all; overflow-wrap: anywhere;
   }
   .note strong { color: var(--text-dim); }
+  .note:first-child { margin-top: 0; }
+  .next-tip {
+    display: none; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: auto; padding-top: 14px; border-top: 1px dashed var(--border);
+    font-size: 11.5px; color: var(--text-faint);
+  }
+  .next-tip > :first-child, .next-tip .chip { margin-top: 2px; }
+  .next-tip .chip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim); font-size: 11.5px;
+  }
+  @media (min-height: 700px) { .next-tip { display: flex; } }
   .kbd {
-    font-family: var(--mono); font-size: 11.5px; background: var(--surface-2);
+    font-family: var(--mono); font-size: 11px; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px;
   }
 
-  .copy-row { display: flex; gap: 8px; margin-top: 10px; }
-  .copy-row .mini-btn { padding: 8px 12px; }
+  .copy-row { display: flex; gap: 7px; margin-top: 9px; }
+  .copy-row .mini-btn { padding: 7px 11px; }
   textarea.json {
-    margin-top: 10px; font-family: var(--mono); font-size: 11.5px; min-height: 118px; resize: vertical;
-    display: none; line-height: 1.5;
+    margin-top: 9px; font-family: var(--mono); font-size: 11px; min-height: 96px; max-height: 140px;
+    resize: vertical; display: none; line-height: 1.5;
   }
   textarea.json.show { display: block; }
 
+  /* ---------------------------------------------------------------- rail */
+  .rail { flex: none; min-width: 0; }
+  .rail .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 13px; box-shadow: var(--shadow);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .rail .card + .card { margin-top: 12px; }
+  .rail .card h2 {
+    font-size: 12.5px; margin: 0 0 6px; letter-spacing: -0.01em; color: var(--text-dim);
+    display: flex; align-items: center; gap: 7px;
+  }
+  .rail .card h2 .dotmark { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  #previewNote { font-size: 11px; color: var(--text-faint); text-align: center; }
+
+  @media (min-width: 960px) {
+    .stage { flex-direction: row; gap: 16px; padding: 14px 18px; }
+    .rail { width: 286px; display: grid; gap: 12px; align-content: start; overflow: hidden; }
+    .step { padding: 18px 20px; }
+    .step-head h2 { font-size: 16px; }
+    .step-head .hint { font-size: 12.5px; }
+  }
+  @media (max-width: 959px) {
+    .rail { display: none; }
+    body[data-step="3"] .rail {
+      display: flex; align-items: center; gap: 11px;
+      order: -1;
+      padding: 7px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+    }
+    body[data-step="3"] .rail .card {
+      background: transparent; border: 0; box-shadow: none; padding: 0;
+      backdrop-filter: none; -webkit-backdrop-filter: none;
+      display: flex; align-items: center; gap: 11px; margin: 0; width: 100%;
+    }
+    body[data-step="3"] .rail .card h2,
+    body[data-step="3"] .rail .app-tile,
+    body[data-step="3"] .rail #whatCard,
+    body[data-step="3"] .rail .note { display: none; }
+    body[data-step="3"] .rail .phone-stage { padding: 0; flex: none; }
+    body[data-step="3"] .rail .phone { width: 52px; padding: 4px; border-radius: 13px; }
+    body[data-step="3"] .rail .phone .screen { border-radius: 10px; }
+    body[data-step="3"] .rail .phone .notch { width: 20px; height: 3px; top: 4px; }
+    body[data-step="3"] .rail .phone .statusbar { height: 12px; font-size: 5.5px; padding: 0 5px; }
+    body[data-step="3"] .rail .phone .navbar { height: 8px; }
+    body[data-step="3"] .rail .phone .navbar i { width: 18px; height: 2px; }
+    body[data-step="3"] .rail .phone .web { padding: 6px 5px; gap: 4px; }
+    body[data-step="3"] .rail .phone .web .host,
+    body[data-step="3"] .rail .phone .web .bar { display: none; }
+    body[data-step="3"] .rail .phone .web .tile { height: 26px; margin-top: 0; }
+    body[data-step="3"] .rail #previewNote { display: block; text-align: left; font-size: 11px; line-height: 1.45; }
+  }
+  @media (max-width: 959px) and (max-height: 700px) {
+    body[data-step="3"] .rail { display: none; }
+  }
+
+  /* ---------------------------------------------------------------- bottombar */
+  .bottombar {
+    flex: none;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 16px calc(9px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border);
+    background: var(--bar);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    z-index: 6;
+  }
+  .nav-btn {
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text-dim);
+    border-radius: 11px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    transition: color .15s, border-color .15s, background .15s, opacity .15s;
+    white-space: nowrap; flex: none;
+  }
+  .nav-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-strong); }
+  .nav-btn:disabled { opacity: .38; cursor: not-allowed; }
+  .nav-btn.next {
+    border: 0; color: #fff;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    box-shadow: 0 10px 22px rgba(79, 70, 229, .32);
+    padding: 10px 18px; min-width: 104px;
+  }
+  .nav-btn.next:hover:not(:disabled) { color: #fff; transform: translateY(-1px); }
+  .nav-btn.next.build { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 10px 22px rgba(16, 185, 129, .32); }
+  .dots { flex: 1; display: flex; justify-content: center; align-items: center; gap: 7px; min-width: 0; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 999px; border: 0; padding: 0; cursor: pointer;
+    background: var(--border-strong); transition: width .22s, background .22s;
+  }
+  .dot.is-current { width: 22px; background: linear-gradient(135deg, #6366f1, #22d3ee); }
+  .dot.is-done { background: rgba(52, 211, 153, .7); }
+  .dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .kbd-hint { display: none; }
+
   .toast {
-    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 16px);
+    position: fixed; left: 50%; bottom: 78px; transform: translate(-50%, 14px);
     background: #111827; color: #f8fafc; border: 1px solid rgba(148,163,184,.3);
-    padding: 11px 18px; border-radius: 12px; font-size: 13px; opacity: 0; pointer-events: none;
+    padding: 10px 16px; border-radius: 12px; font-size: 12.5px; opacity: 0; pointer-events: none;
     transition: opacity .2s, transform .2s; z-index: 50; box-shadow: 0 12px 30px rgba(0,0,0,.4);
-    max-width: calc(100vw - 40px);
+    max-width: calc(100vw - 32px); text-align: center;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
-
-  footer.foot { margin-top: 34px; color: var(--text-faint); font-size: 12px; display: grid; gap: 6px; }
-  footer.foot code { font-family: var(--mono); font-size: 11.5px; }
 
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
     clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
+
+  @media (min-width: 960px) {
+    .kbd-hint { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-faint); margin-left: 8px; }
+  }
+  @media (max-width: 479px) {
+    body { font-size: 14px; }
+    header.top { padding: 8px 12px; gap: 8px; }
+    .brand p { display: none; }
+    .stage { padding: 10px 10px; gap: 9px; }
+    .step { padding: 12px 12px; border-radius: 15px; }
+    .step-head { gap: 8px; padding-bottom: 8px; }
+    .step-head .num { width: 21px; height: 21px; font-size: 11px; }
+    .step-head h2 { font-size: 14px; }
+    .step-head .hint { font-size: 11.5px; }
+    .ghost-btn { padding: 6px 10px; font-size: 12px; }
+    .stepchip { padding: 4px 7px; font-size: 11.5px; gap: 4px; }
+    .stepchip .n { width: 16px; height: 16px; font-size: 10px; }
+    .bottombar { padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); gap: 8px; }
+    .nav-btn { padding: 9px 12px; font-size: 12.5px; }
+    .nav-btn.next { padding: 9px 12px; min-width: 92px; font-size: 12.5px; }
+    .icon-studio { grid-template-columns: 1fr; gap: 10px; justify-items: center; }
+    .icon-studio > div:last-child { width: 100%; }
+    .icon-holder { width: 84px; height: 84px; border-radius: 21px; }
+    .icon-meta { font-size: 10px; }
+    .mini-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .hex-input { width: 82px !important; }
+    .swatch { width: 17px; height: 17px; }
+    .swatches { gap: 4px; }
+  }
+  @media (max-height: 700px) {
+    .stage { padding: 8px 10px; }
+    .step { padding: 10px 12px; }
+    .step-head { padding-bottom: 6px; }
+    .step-head .hint { display: none; }
+    .field { margin-bottom: 8px; }
+    .switch-row { padding: 6px 2px; }
+    .row { gap: 8px; }
+    .step-body .note { margin-top: 8px; }
+  }
+  @media (max-width: 559px) {
+    /* 모바일에서는 하단 바의 빌드 버튼이 단일 CTA */
+    #buildBtn { display: none; }
+    .step[data-step="4"] .secondary-row { margin-top: 0; }
+  }
+  @media (max-width: 479px) {
+    .next-tip > span:last-child { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .step, .toast, .phone, .dot { transition: none !important; }
+  }
 </style>
 </head>
-<body>
-<div class="wrap">
+<body data-step="1">
+<div class="app">
   <header class="top">
     <div class="brand">
       <div class="brand-mark" aria-hidden="true">📱</div>
       <div>
         <h1>web2apk</h1>
-        <p>URL 하나로 안드로이드 APK · GitHub Actions + Capacitor 8</p>
+        <p>URL 하나로 안드로이드 APK</p>
       </div>
     </div>
+
+    <nav class="stepper" id="stepper" aria-label="단계 이동">
+      <button class="stepchip is-current" type="button" data-goto="1" aria-current="step">
+        <span class="n">1</span><span class="t">주소</span>
+      </button>
+      <span class="sep" aria-hidden="true">·</span>
+      <button class="stepchip" type="button" data-goto="2"><span class="n">2</span><span class="t">아이콘</span></button>
+      <span class="sep" aria-hidden="true">·</span>
+      <button class="stepchip" type="button" data-goto="3"><span class="n">3</span><span class="t">옵션</span></button>
+      <span class="sep" aria-hidden="true">·</span>
+      <button class="stepchip" type="button" data-goto="4"><span class="n">4</span><span class="t">빌드</span></button>
+    </nav>
+
     <div class="head-actions">
       <button class="ghost-btn" id="themeToggle" type="button" aria-label="테마 바꾸기">
-        <span id="themeIcon" aria-hidden="true">☾</span><span id="themeLabel">라이트</span>
+        <span id="themeIcon" aria-hidden="true">🌙</span><span id="themeLabel">라이트</span>
       </button>
       <a class="ghost-btn" id="repoLink" href="#" target="_blank" rel="noopener">저장소</a>
     </div>
   </header>
 
-  <div class="layout">
-    <main>
-      <!-- 1. 대상 -->
-      <section class="card" aria-labelledby="step1">
-        <h2 id="step1"><span class="num">1</span> 어떤 웹페이지를 앱으로 만들까요?</h2>
-        <p class="hint">주소만 넣으면 됩니다. 앱은 이 페이지를 전체 화면으로 열어 줍니다.</p>
-
-        <div class="field">
-          <label for="url">웹페이지 주소</label>
-          <input id="url" type="url" inputmode="url" autocomplete="url" spellcheck="false"
-                 placeholder="https://example.com" aria-describedby="urlErr" />
-          <div class="err" id="urlErr" role="alert"></div>
-        </div>
-
-        <div class="row two">
-          <div class="field">
-            <label for="appName">앱 이름</label>
-            <input id="appName" type="text" maxlength="60" placeholder="우리 동네 지도" autocomplete="off"
-                   aria-describedby="appNameErr" />
-            <div class="err" id="appNameErr" role="alert"></div>
-          </div>
-          <div class="field">
-            <label for="appId">패키지명</label>
-            <div class="inline-row">
-              <input id="appId" type="text" spellcheck="false" autocomplete="off"
-                     placeholder="com.poeticecho.myapp" aria-describedby="appIdErr appIdDesc" />
-              <button class="mini-btn" id="appIdSuggest" type="button">자동</button>
-            </div>
-            <div class="desc" id="appIdDesc">앱 이름을 넣으면 자동으로 제안됩니다. 한 번 고치면 더 이상 바뀌지 않아요.</div>
-            <div class="err" id="appIdErr" role="alert"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. 아이콘 -->
-      <section class="card" aria-labelledby="step2">
-        <h2 id="step2"><span class="num">2</span> 아이콘</h2>
-        <p class="hint">이미지를 올리거나, 배경색과 글자로 바로 만들 수 있어요. 비워 두면 앱 이름 첫 글자로 자동 생성합니다.</p>
-
-        <div class="tabs" role="tablist" aria-label="아이콘 방식">
-          <button class="tab" role="tab" id="tabGenerate" aria-controls="panelGenerate" aria-selected="true" type="button">🎨 만들기</button>
-          <button class="tab" role="tab" id="tabUpload" aria-controls="panelUpload" aria-selected="false" type="button">🖼️ 업로드</button>
-          <button class="tab" role="tab" id="tabAuto" aria-controls="panelAuto" aria-selected="false" type="button">✨ 자동</button>
-        </div>
-
-        <div class="icon-studio">
-          <div class="icon-preview-wrap">
-            <div class="icon-holder" id="iconHolder">
-              <canvas id="iconCanvas" width="1024" height="1024" aria-label="아이콘 미리보기"></canvas>
-            </div>
-            <div class="icon-meta" id="iconMeta">1024×1024 · PNG</div>
-          </div>
-
+  <main class="stage">
+    <div class="viewport" id="viewport">
+      <!-- ---------------------------------------------------------- step 1 -->
+      <section class="step active" data-step="1" aria-labelledby="step1">
+        <div class="step-head">
+          <span class="num" aria-hidden="true">1</span>
           <div>
-            <div class="tab-panel" id="panelGenerate" role="tabpanel" aria-labelledby="tabGenerate">
-              <div class="row two">
-                <div class="field">
-                  <label for="iconText">글자 / 이모지</label>
-                  <input id="iconText" type="text" maxlength="2" placeholder="예: 수 또는 🚀" value="" />
-                </div>
-                <div class="field">
-                  <label for="iconFont">글꼴 두께</label>
-                  <select id="iconFont">
-                    <option value="800">굵게</option>
-                    <option value="600">보통</option>
-                  </select>
-                </div>
-              </div>
-              <div class="row two">
-                <div class="field">
-                  <span class="label" id="bgLabel">배경색</span>
-                  <div class="color-row">
-                    <input id="iconBg" type="color" value="#6366f1" aria-labelledby="bgLabel" />
-                    <input id="iconBgHex" class="hex-input" type="text" value="#6366F1" spellcheck="false" aria-label="배경색 HEX" />
-                  </div>
-                  <div class="swatches" id="bgSwatches" role="group" aria-label="배경색 프리셋"></div>
-                </div>
-                <div class="field">
-                  <span class="label" id="fgLabel">글자색</span>
-                  <div class="color-row">
-                    <input id="iconFg" type="color" value="#ffffff" aria-labelledby="fgLabel" />
-                    <input id="iconFgHex" class="hex-input" type="text" value="#FFFFFF" spellcheck="false" aria-label="글자색 HEX" />
-                  </div>
-                </div>
-              </div>
-              <button class="mini-btn" id="iconRandom" type="button" style="padding:8px 12px">🎲 색 조합 랜덤</button>
-            </div>
-
-            <div class="tab-panel" id="panelUpload" role="tabpanel" aria-labelledby="tabUpload" hidden>
-              <div class="drop" id="dropZone" tabindex="0" role="button" aria-label="이미지 파일 선택">
-                <strong>이미지를 끌어다 놓거나 클릭</strong><br />
-                PNG · JPG · WEBP — 정사각형으로 가운데를 잘라 1024×1024 로 맞춥니다
-              </div>
-              <input id="iconFile" type="file" accept="image/png,image/jpeg,image/webp" class="sr-only" />
-            </div>
-
-            <div class="tab-panel" id="panelAuto" role="tabpanel" aria-labelledby="tabAuto" hidden>
-              <p class="note" style="margin-top:0">
-                아이콘을 보내지 않으면 빌드 서버가 <strong>앱 이름 첫 글자</strong>를 브랜드 색 배경 위에 그려서 만듭니다.
-                (한글도 지원) 지금은 미리보기만 보여 드릴게요.
-              </p>
-              <button class="mini-btn" id="iconAutoPreview" type="button" style="padding:8px 12px">미리보기 만들기</button>
-            </div>
+            <h2 id="step1">웹페이지 &amp; 앱 이름</h2>
+            <p class="hint">주소만 넣으면 됩니다. 앱은 이 페이지를 전체 화면으로 열어 줍니다.</p>
           </div>
         </div>
-      </section>
-
-      <!-- 3. 옵션 -->
-      <section class="card" aria-labelledby="step3">
-        <h2 id="step3"><span class="num">3</span> 화면 · 동작 옵션</h2>
-        <p class="hint">나중에 다시 빌드하면 언제든 바꿀 수 있습니다.</p>
-
-        <div class="field">
-          <span class="label">화면 방향</span>
-          <div class="segmented" id="orientationGroup" role="radiogroup" aria-label="화면 방향">
-            <label><input type="radio" name="orientation" value="portrait" checked />세로</label>
-            <label><input type="radio" name="orientation" value="landscape" />가로</label>
-            <label><input type="radio" name="orientation" value="sensor" />자동</label>
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="label">안드로이드 뒤로가기 버튼</span>
-          <div class="segmented" id="backGroup" role="radiogroup" aria-label="뒤로가기 동작">
-            <label><input type="radio" name="backButton" value="history_then_exit" checked />이전 페이지 → 앱 종료</label>
-            <label><input type="radio" name="backButton" value="exit_only" />바로 앱 종료</label>
-          </div>
-        </div>
-
-        <div class="field">
-          <span class="label">외부 도메인 링크</span>
-          <div class="segmented" id="externalGroup" role="radiogroup" aria-label="외부 링크 처리">
-            <label><input type="radio" name="externalLinks" value="system_browser" checked />시스템 브라우저</label>
-            <label><input type="radio" name="externalLinks" value="in_app" />앱 안에서</label>
-          </div>
-          <div class="desc">같은 사이트(서브도메인 포함)는 항상 앱 안에서 열립니다.</div>
-        </div>
-
-        <div class="switch-row">
-          <div class="txt">전체화면 <small>상태바·내비바를 숨기고 콘텐츠에 집중</small></div>
-          <label class="switch"><input type="checkbox" id="fullscreen" /><span class="track"></span>
-            <span class="sr-only">전체화면</span></label>
-        </div>
-        <div class="switch-row">
-          <div class="txt">핀치 줌 허용 <small>두 손가락으로 확대·축소</small></div>
-          <label class="switch"><input type="checkbox" id="allowZoom" /><span class="track"></span>
-            <span class="sr-only">핀치 줌 허용</span></label>
-        </div>
-        <div class="switch-row">
-          <div class="txt">당겨서 새로고침 <small>화면을 아래로 당기면 페이지 다시 읽기</small></div>
-          <label class="switch"><input type="checkbox" id="pullToRefresh" /><span class="track"></span>
-            <span class="sr-only">당겨서 새로고침</span></label>
-        </div>
-
-        <div class="field" style="margin-top:16px">
-          <span class="label" id="sbLabel">상태바 색</span>
-          <div class="color-row">
-            <input id="statusColor" type="color" value="#111827" aria-labelledby="sbLabel" />
-            <input id="statusColorHex" class="hex-input" type="text" value="#111827" spellcheck="false" aria-label="상태바 색 HEX" />
-            <div class="swatches" id="sbSwatches" role="group" aria-label="상태바 색 프리셋"></div>
-          </div>
-          <div class="desc">앱을 열 때 스플래시 배경과 런처 아이콘 배경에도 같은 색을 씁니다.</div>
-        </div>
-      </section>
-
-      <!-- 4. 빌드 -->
-      <section class="card" aria-labelledby="step4">
-        <h2 id="step4"><span class="num">4</span> GitHub 로 APK 빌드</h2>
-        <p class="hint">
-          빌드는 GitHub Actions(공개 저장소는 무료)에서 돌아갑니다. 워크플로 파일은
-          <span class="kbd">.github/workflows/build-apk.yml</span> 하나뿐입니다.
-        </p>
-
-        <div class="row two">
+        <div class="step-body">
           <div class="field">
-            <label for="repo">저장소 <span aria-hidden="true">owner/repo</span></label>
-            <input id="repo" type="text" placeholder="poeticecho/web2apk" spellcheck="false" autocomplete="off" />
+            <label for="url">웹페이지 주소</label>
+            <input id="url" type="url" inputmode="url" autocomplete="url" spellcheck="false"
+                   placeholder="https://example.com" aria-describedby="urlErr" />
+            <div class="err" id="urlErr" role="alert"></div>
           </div>
-          <div class="field">
-            <label for="ref">브랜치</label>
-            <input id="ref" type="text" value="main" spellcheck="false" autocomplete="off" />
+
+          <div class="row two">
+            <div class="field">
+              <label for="appName">앱 이름</label>
+              <input id="appName" type="text" maxlength="60" placeholder="우리 동네 지도" autocomplete="off"
+                     aria-describedby="appNameErr" />
+              <div class="err" id="appNameErr" role="alert"></div>
+            </div>
+            <div class="field">
+              <label for="appId">패키지명</label>
+              <div class="inline-row">
+                <input id="appId" type="text" spellcheck="false" autocomplete="off"
+                       placeholder="com.poeticecho.myapp" aria-describedby="appIdErr appIdDesc" />
+                <button class="mini-btn" id="appIdSuggest" type="button">자동</button>
+              </div>
+              <div class="desc" id="appIdDesc">앱 이름을 넣으면 자동으로 제안됩니다. 한 번 고치면 더 이상 바뀌지 않아요.</div>
+              <div class="err" id="appIdErr" role="alert"></div>
+            </div>
           </div>
-        </div>
 
-        <div class="field">
-          <label for="token">Personal Access Token <span style="color:var(--text-faint);font-weight:400">(Fine-grained, Actions: Read and write)</span></label>
-          <div class="inline-row">
-            <input id="token" type="password" placeholder="github_pat_..." spellcheck="false" autocomplete="off" />
-            <button class="mini-btn" id="tokenToggle" type="button">보기</button>
-            <button class="mini-btn" id="tokenClear" type="button">지우기</button>
+          <p class="note">
+            같은 주소로 다시 빌드하면 새 버전이 됩니다. 설정은 이 브라우저에 자동 저장됩니다.
+          </p>
+          <div class="next-tip" aria-hidden="true">
+            <span>이어서</span>
+            <span class="chip">2 아이콘</span>
+            <span class="chip">3 옵션</span>
+            <span class="chip">4 빌드</span>
+            <span>— Enter 키로도 넘어갑니다</span>
           </div>
-          <div class="desc">
-            토큰은 <strong>이 브라우저의 localStorage</strong>에만 저장되고 api.github.com 외에는 전송되지 않습니다.
-            공용 PC 에서는 쓰지 마세요.
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="releaseTag">릴리스 태그 <span style="color:var(--text-faint);font-weight:400">(선택)</span></label>
-          <input id="releaseTag" type="text" placeholder="v1.0.0 — 비우면 Artifact 로만 받습니다" spellcheck="false" autocomplete="off" />
-        </div>
-
-        <button class="primary-btn" id="buildBtn" type="button">🚀 APK 빌드 시작</button>
-        <div class="secondary-row">
-          <button class="secondary-btn" id="copyJsonBtn" type="button">📋 JSON 파라미터 복사</button>
-          <a class="secondary-btn" id="openActionsBtn" href="#" target="_blank" rel="noopener">↗ GitHub Actions 열기</a>
-        </div>
-
-        <div class="status-box" id="statusBox" aria-live="polite">
-          <div class="headline" id="statusHeadline"></div>
-          <div id="statusDetail"></div>
-          <ul class="steps" id="statusSteps"></ul>
-          <div class="links" id="statusLinks"></div>
-        </div>
-
-        <div class="note">
-          <strong>PAT 없이 쓰기:</strong> 위 “JSON 파라미터 복사”로 값을 복사한 뒤 저장소의
-          Actions → Build APK → Run workflow 에 붙여 넣어도 됩니다.
-          워크플로 파일이 default 브랜치에 있어야 API 로 실행됩니다.
         </div>
       </section>
-    </main>
 
-    <aside class="rail">
+      <!-- ---------------------------------------------------------- step 2 -->
+      <section class="step" data-step="2" aria-labelledby="step2">
+        <div class="step-head">
+          <span class="num" aria-hidden="true">2</span>
+          <div>
+            <h2 id="step2">아이콘 스튜디오</h2>
+            <p class="hint">이미지를 올리거나 배경색·글자로 바로 만들 수 있어요.</p>
+          </div>
+        </div>
+        <div class="step-body">
+          <div class="tabs" role="tablist" aria-label="아이콘 방식">
+            <button class="tab" role="tab" id="tabGenerate" aria-controls="panelGenerate" aria-selected="true" type="button">🎨 만들기</button>
+            <button class="tab" role="tab" id="tabUpload" aria-controls="panelUpload" aria-selected="false" type="button">🖼️ 업로드</button>
+            <button class="tab" role="tab" id="tabAuto" aria-controls="panelAuto" aria-selected="false" type="button">✨ 자동</button>
+          </div>
+
+          <div class="icon-studio">
+            <div class="icon-preview-wrap">
+              <div class="icon-holder" id="iconHolder">
+                <canvas id="iconCanvas" width="1024" height="1024" aria-label="아이콘 미리보기"></canvas>
+              </div>
+              <div class="icon-meta" id="iconMeta">1024×1024 · PNG</div>
+            </div>
+
+            <div>
+              <div class="tab-panel" id="panelGenerate" role="tabpanel" aria-labelledby="tabGenerate">
+                <div class="mini-grid">
+                  <div class="field">
+                    <label for="iconText">글자 / 이모지</label>
+                    <input id="iconText" type="text" maxlength="2" placeholder="예: 수 또는 🚀" value="" />
+                  </div>
+                  <div class="field">
+                    <label for="iconFont">글꼴 두께</label>
+                    <select id="iconFont">
+                      <option value="800">굵게</option>
+                      <option value="600">보통</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="mini-grid">
+                  <div class="field">
+                    <span class="label" id="bgLabel">배경색</span>
+                    <div class="color-row">
+                      <input id="iconBg" type="color" value="#6366f1" aria-labelledby="bgLabel" />
+                      <input id="iconBgHex" class="hex-input" type="text" value="#6366F1" spellcheck="false" aria-label="배경색 HEX" />
+                    </div>
+                    <div class="swatches" id="bgSwatches" role="group" aria-label="배경색 프리셋"></div>
+                  </div>
+                  <div class="field">
+                    <span class="label" id="fgLabel">글자색</span>
+                    <div class="color-row">
+                      <input id="iconFg" type="color" value="#ffffff" aria-labelledby="fgLabel" />
+                      <input id="iconFgHex" class="hex-input" type="text" value="#FFFFFF" spellcheck="false" aria-label="글자색 HEX" />
+                    </div>
+                  </div>
+                </div>
+                <button class="mini-btn" id="iconRandom" type="button" style="padding:7px 11px">🎲 색 조합 랜덤</button>
+              </div>
+
+              <div class="tab-panel" id="panelUpload" role="tabpanel" aria-labelledby="tabUpload" hidden>
+                <div class="drop" id="dropZone" tabindex="0" role="button" aria-label="이미지 파일 선택">
+                  <strong>이미지를 끌어다 놓거나 클릭</strong><br />
+                  PNG · JPG · WEBP — 가운데를 잘라 1024×1024 로 맞춥니다
+                </div>
+                <input id="iconFile" type="file" accept="image/png,image/jpeg,image/webp" class="sr-only" />
+              </div>
+
+              <div class="tab-panel" id="panelAuto" role="tabpanel" aria-labelledby="tabAuto" hidden>
+                <p class="note" style="margin-top:0">
+                  아이콘을 보내지 않으면 빌드 서버가 <strong>앱 이름 첫 글자</strong>를 브랜드 색 배경 위에 그려서 만듭니다.
+                  (한글도 지원) 지금은 미리보기만 보여 드릴게요.
+                </p>
+                <button class="mini-btn" id="iconAutoPreview" type="button" style="padding:7px 11px">미리보기 만들기</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------------- step 3 -->
+      <section class="step" data-step="3" aria-labelledby="step3">
+        <div class="step-head">
+          <span class="num" aria-hidden="true">3</span>
+          <div>
+            <h2 id="step3">화면 · 동작 옵션</h2>
+            <p class="hint">나중에 다시 빌드하면 언제든 바꿀 수 있습니다.</p>
+          </div>
+        </div>
+        <div class="step-body">
+          <div class="row two">
+            <div class="field">
+              <span class="label">화면 방향</span>
+              <div class="segmented" id="orientationGroup" role="radiogroup" aria-label="화면 방향">
+                <label><input type="radio" name="orientation" value="portrait" checked />세로</label>
+                <label><input type="radio" name="orientation" value="landscape" />가로</label>
+                <label><input type="radio" name="orientation" value="sensor" />자동</label>
+              </div>
+            </div>
+            <div class="field">
+              <span class="label">안드로이드 뒤로가기 버튼</span>
+              <div class="segmented" id="backGroup" role="radiogroup" aria-label="뒤로가기 동작">
+                <label><input type="radio" name="backButton" value="history_then_exit" checked />이전 페이지 → 종료</label>
+                <label><input type="radio" name="backButton" value="exit_only" />바로 종료</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label">외부 도메인 링크</span>
+            <div class="segmented" id="externalGroup" role="radiogroup" aria-label="외부 링크 처리">
+              <label><input type="radio" name="externalLinks" value="system_browser" checked />시스템 브라우저</label>
+              <label><input type="radio" name="externalLinks" value="in_app" />앱 안에서</label>
+            </div>
+            <div class="desc">같은 사이트(서브도메인 포함)는 항상 앱 안에서 열립니다.</div>
+          </div>
+
+          <div class="switch-row">
+            <div class="txt">전체화면 <small>상태바·내비바를 숨기고 콘텐츠에 집중</small></div>
+            <label class="switch"><input type="checkbox" id="fullscreen" /><span class="track"></span>
+              <span class="sr-only">전체화면</span></label>
+          </div>
+          <div class="switch-row">
+            <div class="txt">핀치 줌 허용 <small>두 손가락으로 확대·축소</small></div>
+            <label class="switch"><input type="checkbox" id="allowZoom" /><span class="track"></span>
+              <span class="sr-only">핀치 줌 허용</span></label>
+          </div>
+          <div class="switch-row">
+            <div class="txt">당겨서 새로고침 <small>화면을 아래로 당기면 페이지 다시 읽기</small></div>
+            <label class="switch"><input type="checkbox" id="pullToRefresh" /><span class="track"></span>
+              <span class="sr-only">당겨서 새로고침</span></label>
+          </div>
+
+          <div class="field" style="margin-top:12px">
+            <span class="label" id="sbLabel">상태바 색</span>
+            <div class="color-row">
+              <input id="statusColor" type="color" value="#111827" aria-labelledby="sbLabel" />
+              <input id="statusColorHex" class="hex-input" type="text" value="#111827" spellcheck="false" aria-label="상태바 색 HEX" />
+              <div class="swatches" id="sbSwatches" role="group" aria-label="상태바 색 프리셋"></div>
+            </div>
+            <div class="desc">스플래시 배경과 런처 아이콘 배경에도 같은 색을 씁니다.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------------------------------------------------- step 4 -->
+      <section class="step" data-step="4" aria-labelledby="step4">
+        <div class="step-head">
+          <span class="num" aria-hidden="true">4</span>
+          <div>
+            <h2 id="step4">GitHub 로 APK 빌드</h2>
+            <p class="hint">빌드는 GitHub Actions(공개 저장소는 무료)에서 돌아갑니다.</p>
+          </div>
+        </div>
+        <div class="step-body">
+          <div class="row two">
+            <div class="field">
+              <label for="repo">저장소 <span aria-hidden="true" style="color:var(--text-faint);font-weight:400">owner/repo</span></label>
+              <input id="repo" type="text" placeholder="poeticecho/web2apk" spellcheck="false" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="ref">브랜치</label>
+              <input id="ref" type="text" value="main" spellcheck="false" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="token">Personal Access Token <span style="color:var(--text-faint);font-weight:400">(Fine-grained · Actions: Read and write)</span></label>
+            <div class="inline-row">
+              <input id="token" type="password" placeholder="github_pat_..." spellcheck="false" autocomplete="off" />
+              <button class="mini-btn" id="tokenToggle" type="button">보기</button>
+              <button class="mini-btn" id="tokenClear" type="button">지우기</button>
+            </div>
+            <div class="desc">
+              토큰은 <strong>이 브라우저의 localStorage</strong>에만 저장되고 api.github.com 외에는 전송되지 않습니다. 공용 PC 에서는 쓰지 마세요.
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="releaseTag">릴리스 태그 <span style="color:var(--text-faint);font-weight:400">(선택)</span></label>
+            <input id="releaseTag" type="text" placeholder="v1.0.0 — 비우면 Artifact 로만 받습니다" spellcheck="false" autocomplete="off" />
+          </div>
+
+          <button class="primary-btn" id="buildBtn" type="button">🚀 APK 빌드 시작</button>
+          <div class="secondary-row">
+            <button class="secondary-btn" id="copyJsonBtn" type="button">📋 JSON 파라미터 복사</button>
+            <a class="secondary-btn" id="openActionsBtn" href="#" target="_blank" rel="noopener">↗ GitHub Actions 열기</a>
+          </div>
+
+          <div class="status-box" id="statusBox" aria-live="polite">
+            <div class="headline" id="statusHeadline"></div>
+            <div id="statusDetail"></div>
+            <ul class="steps" id="statusSteps"></ul>
+            <div class="links" id="statusLinks"></div>
+          </div>
+
+          <p class="note">
+            <strong>PAT 없이 쓰기:</strong> “JSON 파라미터 복사”로 값을 복사한 뒤 저장소의
+            Actions → Build APK → Run workflow 에 붙여 넣어도 됩니다. 워크플로 파일
+            (<span class="kbd">.github/workflows/build-apk.yml</span>)이 default 브랜치에 있어야 API 로 실행됩니다.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="rail" aria-label="미리보기">
       <section class="card" aria-labelledby="previewTitle">
-        <h2 id="previewTitle">미리보기</h2>
+        <h2 id="previewTitle"><span class="dotmark" aria-hidden="true"></span>실시간 미리보기</h2>
         <div class="phone-stage">
           <div class="phone" id="phone">
             <div class="screen">
@@ -630,24 +910,30 @@
         <div class="note" id="previewNote">세로 · 상태바 표시</div>
       </section>
 
-      <section class="card" aria-labelledby="whatTitle">
-        <h2 id="whatTitle">무엇이 만들어지나요?</h2>
-        <div class="note" style="border-left-color:var(--accent)">
+      <section class="card" id="whatCard" aria-labelledby="whatTitle">
+        <h2 id="whatTitle"><span class="dotmark" aria-hidden="true"></span>무엇이 만들어지나요?</h2>
+        <div class="note" style="border-left-color:var(--accent);margin-top:0">
           Capacitor 8 · targetSdk 36(Android 16) · minSdk 24<br />
           결과물: <span class="kbd">APK</span> (Artifact, 30일 보관) + 선택 시 GitHub Release
         </div>
         <div class="note">
-          전체화면·뒤로가기·줌·당겨서 새로고침은 생성된 <span class="kbd">MainActivity.java</span> 에,
-          화면 방향·cleartext 허용은 <span class="kbd">AndroidManifest.xml</span> 에,
-          외부 링크 정책은 <span class="kbd">capacitor.config.json</span> 에 반영됩니다.
+          옵션은 생성된 <span class="kbd">MainActivity.java</span> · <span class="kbd">AndroidManifest.xml</span> ·
+          <span class="kbd">capacitor.config.json</span> 에 반영됩니다.
         </div>
       </section>
     </aside>
-  </div>
+  </main>
 
-  <footer class="foot">
-    <div>web2apk · GitHub Actions + Capacitor 8 · 빌드는 저장소의 워크플로에서 실행됩니다.</div>
-    <div>이 페이지는 <code>docs/</code> 폴더에 있어 GitHub Pages 로 바로 배포할 수 있습니다.</div>
+  <footer class="bottombar">
+    <button class="nav-btn prev" id="prevBtn" type="button" disabled>← 이전</button>
+    <div class="dots" id="stepDots" role="group" aria-label="단계">
+      <button class="dot is-current" type="button" data-goto="1" aria-label="1단계 주소"></button>
+      <button class="dot" type="button" data-goto="2" aria-label="2단계 아이콘"></button>
+      <button class="dot" type="button" data-goto="3" aria-label="3단계 옵션"></button>
+      <button class="dot" type="button" data-goto="4" aria-label="4단계 빌드"></button>
+      <span class="kbd-hint"><span class="kbd">Enter</span> 다음</span>
+    </div>
+    <button class="nav-btn next" id="nextBtn" type="button">다음 →</button>
   </footer>
 </div>
 
@@ -668,6 +954,7 @@
     icon: 'web2apk.icon.v1',
   };
   const WORKFLOW_FILE = 'build-apk.yml';
+  const STEP_COUNT = 4;
   const ANDROID_KEYWORDS = new Set(('abstract assert boolean break byte case catch char class const continue default do double else ' +
     'enum extends final finally float for goto if implements import instanceof int interface long native new package private ' +
     'protected public return short static strictfp super switch synchronized this throw throws transient try void volatile ' +
@@ -702,8 +989,8 @@
     const parts = value.split('.');
     if (parts.length < 2) return '점(.)으로 구분된 2개 이상이어야 합니다. 예: com.poeticecho.myapp';
     for (const part of parts) {
-      if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(part)) return `"${part}" — 각 조각은 영문자로 시작하고 영문/숫자/밑줄만 쓸 수 있습니다.`;
-      if (ANDROID_KEYWORDS.has(part.toLowerCase())) return `"${part}" 은(는) 예약어라 쓸 수 없습니다.`;
+      if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(part)) return '"' + part + '" — 각 조각은 영문자로 시작하고 영문/숫자/밑줄만 쓸 수 있습니다.';
+      if (ANDROID_KEYWORDS.has(part.toLowerCase())) return '"' + part + '" 은(는) 예약어라 쓸 수 없습니다.';
     }
     return '';
   }
@@ -746,7 +1033,7 @@
   const themeToggle = $('themeToggle');
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    $('themeIcon').textContent = theme === 'dark' ? '☾' : '☀';
+    $('themeIcon').textContent = theme === 'dark' ? '🌙' : '☀️';
     $('themeLabel').textContent = theme === 'dark' ? '라이트' : '다크';
     themeToggle.setAttribute('aria-pressed', String(theme === 'light'));
     try { localStorage.setItem(STORE.theme, theme); } catch (e) { /* private mode */ }
@@ -766,7 +1053,6 @@
 
   // ------------------------------------------------------------ 아이콘 스튜디오
   const iconCanvas = $('iconCanvas');
-  const ICON_SIZE = 1024;
   let uploadedImage = null;   // Image 객체(업로드 모드)
   let iconMode = 'generate';  // generate | upload | auto
   let iconDataUrl = '';       // 현재 미리보기 PNG(data URL)
@@ -1136,20 +1422,25 @@
     }
   }
 
-  function validate() {
+  function validate(reveal) {
     const urlInfo = normalizeUrl(els.url.value);
+    const showEmpty = !!reveal;
     let ok = true;
-    if (urlInfo.error && els.url.value.trim()) { setError(els.url, $('urlErr'), urlInfo.error); ok = false; }
-    else if (!els.url.value.trim()) { setError(els.url, $('urlErr'), ''); ok = false; }
-    else setError(els.url, $('urlErr'), '');
+    if (urlInfo.error) {
+      ok = false;
+      if (els.url.value.trim() || showEmpty) setError(els.url, $('urlErr'), urlInfo.error);
+      else setError(els.url, $('urlErr'), '');
+    } else setError(els.url, $('urlErr'), '');
 
-    if (!els.appName.value.trim()) ok = false;
-    else setError(els.appName, $('appNameErr'), '');
+    if (!els.appName.value.trim()) {
+      ok = false;
+      setError(els.appName, $('appNameErr'), showEmpty ? '앱 이름을 입력하세요.' : '');
+    } else setError(els.appName, $('appNameErr'), '');
 
     const idError = validateAppId(els.appId.value);
     if (idError) {
       ok = false;
-      if (els.appId.value.trim()) setError(els.appId, $('appIdErr'), idError);
+      if (els.appId.value.trim() || showEmpty) setError(els.appId, $('appIdErr'), idError);
       else if (els.appName.value.trim()) setError(els.appId, $('appIdErr'), '앱 이름을 넣으면 자동으로 채워집니다.');
       else setError(els.appId, $('appIdErr'), '');
     } else {
@@ -1158,6 +1449,119 @@
 
     return ok;
   }
+
+  function focusFirstError() {
+    if (els.url.classList.contains('invalid')) { els.url.focus(); return; }
+    if (els.appName.classList.contains('invalid')) { els.appName.focus(); return; }
+    if (els.appId.classList.contains('invalid')) els.appId.focus();
+  }
+
+  // ------------------------------------------------------------ 위자드 진행
+  const panes = Array.from(document.querySelectorAll('.step'));
+  const chips = Array.from(document.querySelectorAll('.stepchip'));
+  const dots = Array.from(document.querySelectorAll('#stepDots .dot'));
+  let currentStep = 1;
+
+  function updateStepper() {
+    chips.forEach((chip) => {
+      const step = Number(chip.dataset.goto);
+      const done = step < currentStep;
+      chip.classList.toggle('is-done', done);
+      chip.classList.toggle('is-current', step === currentStep);
+      chip.querySelector('.n').textContent = done ? '✓' : String(step);
+      if (step === currentStep) chip.setAttribute('aria-current', 'step');
+      else chip.removeAttribute('aria-current');
+    });
+    dots.forEach((dot) => {
+      const step = Number(dot.dataset.goto);
+      dot.classList.toggle('is-current', step === currentStep);
+      dot.classList.toggle('is-done', step < currentStep);
+      if (step === currentStep) dot.setAttribute('aria-current', 'step');
+      else dot.removeAttribute('aria-current');
+    });
+  }
+
+  function updateBottombar() {
+    $('prevBtn').disabled = currentStep === 1;
+    const last = currentStep === STEP_COUNT;
+    const next = $('nextBtn');
+    next.innerHTML = last ? '🚀 APK 빌드 시작' : '다음 →';
+    next.classList.toggle('build', last);
+    next.setAttribute('aria-label', last ? 'APK 빌드 시작' : '다음 단계');
+  }
+
+  function setStep(target, enforce) {
+    const next = Math.min(STEP_COUNT, Math.max(1, Number(target) || 1));
+    if (enforce !== false && next > currentStep && !validate(true)) {
+      toast('1단계의 주소와 앱 이름을 먼저 확인해 주세요');
+      focusFirstError();
+      return false;
+    }
+    const previous = currentStep;
+    currentStep = next;
+    document.body.dataset.step = String(next);
+    panes.forEach((pane) => {
+      const step = Number(pane.dataset.step);
+      pane.classList.toggle('active', step === next);
+      pane.classList.toggle('left', step < next);
+      pane.setAttribute('aria-hidden', String(step !== next));
+      if (step === next) pane.removeAttribute('inert');
+      else pane.setAttribute('inert', '');
+    });
+    updateStepper();
+    updateBottombar();
+    const pane = panes[next - 1];
+    if (pane) pane.querySelector('.step-body').scrollTop = 0;
+    // 단계가 바뀌면 키보드 포커스가 숨은 요소에 남지 않도록 정리한다.
+    if (previous !== next && document.activeElement && pane && !pane.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    return true;
+  }
+
+  chips.forEach((chip) => chip.addEventListener('click', () => setStep(Number(chip.dataset.goto), true)));
+  dots.forEach((dot) => dot.addEventListener('click', () => setStep(Number(dot.dataset.goto), true)));
+  $('prevBtn').addEventListener('click', () => setStep(currentStep - 1, false));
+  $('nextBtn').addEventListener('click', () => {
+    if (currentStep === STEP_COUNT) { dispatchBuild(); return; }
+    setStep(currentStep + 1, true);
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    const target = event.target || {};
+    const tag = String(target.tagName || '').toLowerCase();
+    if (tag === 'textarea' || tag === 'button' || tag === 'a' || tag === 'select') return;
+    if (target.isContentEditable) return;
+    if (currentStep >= STEP_COUNT) return;
+    event.preventDefault();
+    setStep(currentStep + 1, true);
+  });
+
+  // 모바일 스와이프로 단계 이동
+  (function enableSwipe() {
+    const viewport = $('viewport');
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    viewport.addEventListener('touchstart', (event) => {
+      if (!event.touches || event.touches.length !== 1) { tracking = false; return; }
+      startX = event.touches[0].clientX;
+      startY = event.touches[0].clientY;
+      tracking = true;
+    }, { passive: true });
+    viewport.addEventListener('touchend', (event) => {
+      if (!tracking) return;
+      tracking = false;
+      const touch = (event.changedTouches && event.changedTouches[0]) || null;
+      if (!touch) return;
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+      if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+      if (dx < 0) setStep(currentStep + 1, true);
+      else setStep(currentStep - 1, false);
+    }, { passive: true });
+  })();
 
   // ------------------------------------------------------------ 페이로드
   function buildInputs() {
@@ -1200,9 +1604,16 @@
     return 'GitHub API 오류 (HTTP ' + status + ')' + (message ? ': ' + message : '');
   }
 
+  function setBuilding(building) {
+    state.building = building;
+    $('buildBtn').disabled = building;
+    $('nextBtn').disabled = building;
+  }
+
   async function dispatchBuild() {
     if (state.building) return;
-    if (!validate()) { toast('입력값을 먼저 확인해 주세요'); $('url').focus(); return; }
+    if (currentStep !== STEP_COUNT && document.body.dataset.step !== String(STEP_COUNT)) setStep(STEP_COUNT, true);
+    if (!validate(true)) { toast('입력값을 먼저 확인해 주세요'); setStep(1, false); focusFirstError(); return; }
 
     const repo = els.repo.value.trim();
     if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) { toast('저장소를 owner/repo 형식으로 입력하세요'); els.repo.focus(); return; }
@@ -1210,15 +1621,16 @@
     if (!token) { toast('Personal Access Token 을 입력하세요'); els.token.focus(); return; }
 
     const inputs = buildInputs();
-    const [owner, name] = repo.split('/');
+    const parts = repo.split('/');
+    const owner = parts[0];
+    const name = parts[1];
     const ref = els.ref.value.trim() || 'main';
 
     if (inputs.icon_base64 && inputs.icon_base64.length > 400000) {
       toast('아이콘이 커서 GitHub 이 요청을 거부할 수 있어요. 실패하면 assets/icon.png 로 넣어 주세요.');
     }
 
-    state.building = true;
-    $('buildBtn').disabled = true;
+    setBuilding(true);
     showStatus('queued', '빌드를 요청하는 중…', 'GitHub 에 워크플로 실행을 요청했습니다.');
 
     try {
@@ -1236,8 +1648,7 @@
       showStatus('queued', '빌드 요청 완료', '워크플로 실행을 찾는 중입니다… (보통 5~15초)');
       pollRun(owner, name, token);
     } catch (error) {
-      state.building = false;
-      $('buildBtn').disabled = false;
+      setBuilding(false);
       showStatus('failure', '빌드를 시작하지 못했습니다', escapeHtml(error.message));
     }
   }
@@ -1253,6 +1664,8 @@
       '<span class="badge ' + kind + '"><span class="dot"></span>' + (labels[kind] || kind) + '</span>' +
       '<strong>' + escapeHtml(title) + '</strong>';
     $('statusDetail').innerHTML = detail || '';
+    const body = box.closest('.step-body');
+    if (body) body.scrollTop = body.scrollHeight;
   }
 
   function renderSteps(steps) {
@@ -1340,16 +1753,14 @@
           } catch (e) { /* 단계 정보는 없어도 괜찮다 */ }
 
           if (run.status === 'completed') {
-            state.building = false;
-            $('buildBtn').disabled = false;
+            setBuilding(false);
             if (run.conclusion === 'success') toast('APK 빌드 성공!');
             return;
           }
         }
         state.pollTimer = setTimeout(tick, 5000);
       } catch (error) {
-        state.building = false;
-        $('buildBtn').disabled = false;
+        setBuilding(false);
         showStatus('failure', '상태 확인 실패', escapeHtml(error.message));
       }
     };
@@ -1386,6 +1797,8 @@
     }
     box.value = summary;
     box.classList.add('show');
+    const body = box.closest('.step-body');
+    if (body) body.scrollTop = body.scrollHeight;
   });
 
   $('tokenToggle').addEventListener('click', () => {
@@ -1422,6 +1835,9 @@
   redrawIcon();
   updatePreview();
   validate();
+  updateStepper();
+  updateBottombar();
+  setStep(1, false);
 
   // 테스트/디버깅용 (window.web2apk 로 상태를 읽을 수 있다)
   window.web2apk = {
@@ -1436,6 +1852,8 @@
     selectMode: selectMode,
     readSettings: readSettings,
     dispatchBuild: dispatchBuild,
+    goToStep: setStep,
+    currentStep: () => currentStep,
   };
 })();
 </script>
