@@ -1,0 +1,230 @@
+name: Build APK (web2apk)
+
+# URL 하나로 안드로이드 APK 를 만든다.
+#  - GitHub 웹 UI: Actions → Build APK (web2apk) → Run workflow
+#  - API: POST /repos/{owner}/{repo}/actions/workflows/build-apk.yml/dispatches
+#  - docs/index.html 의 "APK 빌드 시작" 버튼도 같은 API 를 호출한다.
+
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && inputs.app_name || github.event.client_payload.app_name || 'web2apk' }} · APK 빌드
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: '포장할 웹페이지 주소 (예: https://example.com)'
+        required: true
+        type: string
+      app_name:
+        description: '앱 이름 (런처에 표시, 예: 우리 동네 지도)'
+        required: true
+        type: string
+      app_id:
+        description: '패키지명 (비우면 com.poeticecho.webapp)'
+        required: false
+        default: 'com.poeticecho.webapp'
+        type: string
+      fullscreen:
+        description: '전체화면 (상태바·내비바 숨김)'
+        required: false
+        default: false
+        type: boolean
+      orientation:
+        description: '화면 방향'
+        required: false
+        default: portrait
+        type: choice
+        options:
+          - portrait
+          - landscape
+          - sensor
+      allow_zoom:
+        description: '핀치 줌 허용'
+        required: false
+        default: false
+        type: boolean
+      back_button:
+        description: '안드로이드 하드웨어 뒤로가기 동작'
+        required: false
+        default: history_then_exit
+        type: choice
+        options:
+          - history_then_exit
+          - exit_only
+      external_links:
+        description: '외부 도메인 링크 처리'
+        required: false
+        default: system_browser
+        type: choice
+        options:
+          - system_browser
+          - in_app
+      pull_to_refresh:
+        description: '당겨서 새로고침'
+        required: false
+        default: false
+        type: boolean
+      status_bar_color:
+        description: '상태바 배경색 (#RRGGBB)'
+        required: false
+        default: '#111827'
+        type: string
+      icon_base64:
+        description: '아이콘 PNG base64 (선택, 최대 약 1MB). 비우면 assets/icon.png 또는 앱 이름으로 자동 생성'
+        required: false
+        default: ''
+        type: string
+      release_tag:
+        description: 'GitHub Release 태그 (선택, 예: v1.0.0 — 비우면 Artifact 만 생성)'
+        required: false
+        default: ''
+        type: string
+
+  # API/repository_dispatch 로도 실행할 수 있다(입력 이름은 client_payload 키와 동일).
+  repository_dispatch:
+    types: [web2apk]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ inputs.app_name || github.event.client_payload.app_name || 'webapp' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages (API 36)
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;36.0.0" 
+"build-tools;35.0.0" > /dev/null
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Normalize inputs
+        id: opts
+        run: node scripts/resolve-inputs.mjs
+
+      - name: Generate web assets & Capacitor config
+        run: node scripts/generate-project.mjs prepare
+
+      - name: Add Android platform (Capacitor 8)
+        run: npx cap add android
+
+      - name: Apply app options to the Android project
+        run: node scripts/generate-project.mjs patch
+
+      - name: Generate launcher icons & splash
+        run: >-
+          npx @capacitor/assets generate --android
+          --iconBackgroundColor "${{ steps.opts.outputs.icon_bg }}"
+          --iconBackgroundColorDark "${{ steps.opts.outputs.icon_bg }}"
+          --splashBackgroundColor "${{ steps.opts.outputs.icon_bg }}"
+          --splashBackgroundColorDark "${{ steps.opts.outputs.icon_bg }}"
+          --logoSplashScale 0.3
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Configure release signing (optional)
+        id: signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/signing.mjs
+
+      - name: Build APK
+        working-directory: android
+        env:
+          WEB2APK_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          WEB2APK_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          WEB2APK_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD 
+}}
+        run: ./gradlew ${{ steps.signing.outputs.assemble_task || 'assembleDebug' }} --no-daemon --stacktrace
+
+      - name: Collect APK
+        id: apk
+        env:
+          SAFE_NAME: ${{ steps.opts.outputs.safe_name }}
+          APK_GLOB: ${{ steps.signing.outputs.apk_glob }}
+          RUN_NUMBER: ${{ github.run_number }}
+          APP_NAME: ${{ steps.opts.outputs.app_name }}
+          APP_ID: ${{ steps.opts.outputs.app_id }}
+          TARGET_URL: ${{ steps.opts.outputs.url }}
+          IS_SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          APK="$(find android/app/build/outputs/apk -name '*.apk' -path "*/${APK_GLOB}/*" | head -n 1)"
+          if [ -z "$APK" ]; then
+            echo "::error::APK 파일을 찾지 못했습니다."
+            find android/app/build/outputs -name '*.apk' || true
+            exit 1
+          fi
+          OUT="dist/${SAFE_NAME}-${RUN_NUMBER}.apk"
+          cp "$APK" "$OUT"
+          SIZE="$(du -h "$OUT" | cut -f1)"
+          SIGN_LABEL="debug"
+          if [ "${IS_SIGNED}" = "true" ]; then SIGN_LABEL="release(키스토어)"; fi
+          echo "apk_path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "apk_size=$SIZE" >> "$GITHUB_OUTPUT"
+          {
+            echo "### ✅ APK 준비 완료"
+            echo ""
+            echo "| 항목 | 값 |"
+            echo "| --- | --- |"
+            echo "| 파일 | \`$(basename "$OUT")\` ($SIZE) |"
+            echo "| 앱 이름 | $APP_NAME |"
+            echo "| 패키지명 | \`$APP_ID\` |"
+            echo "| 대상 URL | $TARGET_URL |"
+            echo "| 서명 | $SIGN_LABEL |"
+            echo ""
+            echo "이 실행 페이지 아래 **Artifacts** 에서 내려받아 안드로이드 폰에 설치하세요."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.opts.outputs.artifact_name }}
+          path: ${{ steps.apk.outputs.apk_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release (optional)
+        if: ${{ steps.opts.outputs.release_tag != '' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.opts.outputs.release_tag }}
+          name: ${{ steps.opts.outputs.app_name }} ${{ steps.opts.outputs.release_tag }}
+          files: $
+{{ steps.apk.outputs.apk_path }}
+          body: |
+            **${{ steps.opts.outputs.app_name }}** APK 자동 빌드 (web2apk)
+
+            - 패키지명: `${{ steps.opts.outputs.app_id }}`
+            - 대상 URL: ${{ steps.opts.outputs.url }}
+            - 빌드: #${{ github.run_number }} · 커밋 `${{ github.sha }}`
